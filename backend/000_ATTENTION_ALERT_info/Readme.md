@@ -32,15 +32,24 @@ La base de données (MySQL) est gérée entièrement côté **back-end (Laravel)
   php artisan make:seeder CatalogueSeeder
   ```
 
-## 🔜 Prochaine étape (toujours S1)
+2. **Création des tables (migrations)**
+   Toutes les tables du projet ont été créées via des migrations Laravel :
 
-- Développement des endpoints API du catalogue (`app/Http/Controllers/Api/CatalogueController.php`).
-- Remplissage du `CatalogueSeeder.php` avec des données de test pour `materiels` et `prestations_decoration`, une fois les migrations correspondantes créées par Esdras.
+   - `clients`
+   - `materiels`
+   - `prestations_decoration`
+   - `elements_decor`
+   - `admins`
+   - `commandes`
+   - `commande_materiel`
+   - `commande_decoration`
+   - `commande_elements_decor`
+   - `devis`
 
---------------------------------------------------------
-## ⚠️ Point de coordination
+   Ces tables respectent la structure définie dans le **dictionnaire de données** du projet, avec les bonnes relations entre elles (clés étrangères).
 
-Les migrations et modèles (`Materiel.php`, `PrestationDecoration.php`, etc.) sont créés par **Esdras**. Il est nécessaire de se synchroniser avec lui sur :
-- le nom exact de la base de données,
-- les identifiants MySQL utilisés en local par toute l'équipe,
-- la structure des tables avant d'écrire le seeder.
+3. **Exécution des migrations**
+   ```
+   php artisan migrate
+   ```
+   Toutes les tables ont été créées avec succès dans la base de données.
