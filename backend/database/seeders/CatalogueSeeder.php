@@ -12,6 +12,6 @@ class CatalogueSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        
     }
 }
