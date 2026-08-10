@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -43,22 +42,6 @@ return [
             'synchronous' => null,
             'transaction_mode' => 'DEFERRED',
         ],
-
-        'mysql' => [
-            'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
             
         'mysql' => [
             'driver' => 'mysql',
@@ -82,7 +65,7 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 
                 // CONFIGURATION : Connexions standards (pas de ATTR_PERSISTENT pour l'instant)
-                // RAISON : Comme le nombre d'utilisateurs est inconnu, on commence léger pour économiser 
+                // RAISON : Comme le nombre d'utilisateurs is inconnu, on commence léger pour économiser 
                 // la RAM. Si le trafic explose plus tard, il suffira d'activer ATTR_PERSISTENT ici.
 
                 // MODIFICATION : Mode d'erreur strict (ERRMODE_EXCEPTION)
@@ -114,7 +97,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -144,8 +127,6 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
     ],

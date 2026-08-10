@@ -11,13 +11,18 @@ return new class extends Migration
         Schema::create('commande_materiel', function (Blueprint $table) {
             $table->id();
 
+            // cascade : si une commande est hard-deleted (rare, cas admin),
+            // ses lignes de détail n'ont plus de raison d'exister
             $table->foreignId('commande_id')->constrained('commandes')->onDelete('cascade');
 
-            $table->foreignId('materiel_id')->constrained('materiels')->onDelete('cascade');
+            // restrict : protège l'intégrité si quelqu'un tente un hard delete
+            // du matériel malgré la corbeille
+            $table->foreignId('materiel_id')->constrained('materiels')->onDelete('restrict');
 
-            $table->integer('quantite');
+            $table->unsignedInteger('quantite');
 
             $table->timestamps();
+
         });
     }
 

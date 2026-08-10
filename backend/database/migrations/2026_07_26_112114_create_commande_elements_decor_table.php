@@ -13,7 +13,7 @@ return new class extends Migration
 
             $table->foreignId('commande_id')->constrained('commandes')->onDelete('cascade');
 
-            $table->foreignId('element_decor_id')->constrained('elements_decor')->onDelete('cascade');
+            $table->foreignId('element_decor_id')->constrained('elements_decor')->onDelete('restrict');
 
             $table->timestamps();
         });
