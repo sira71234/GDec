@@ -74,7 +74,7 @@
                         <th>Prestation</th>
                         <th>Quantité</th>
                         <th>Prix unitaire</th>
-                        <th>Sous-total</th>
+                        <th>Total</th>
                     </tr>
                 </thead>
                 <tbody>
