@@ -12,7 +12,7 @@ function Home() {
 
     return (
     <>
-        <section className="bg-emerald-800 text-white text-center py-16 px-4">
+        <section className="bg-emerald-800 text-white text-center py-6 px-4">
         <h1 className="text-3xl md:text-5xl font-bold mb-4">
             Location & Décoration pour tous vos événements
         </h1>

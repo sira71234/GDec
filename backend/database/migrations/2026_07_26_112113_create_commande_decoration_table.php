@@ -13,9 +13,9 @@ return new class extends Migration
 
             $table->foreignId('commande_id')->constrained('commandes')->onDelete('cascade');
 
-            $table->foreignId('prestation_decoration_id')->constrained('prestations_decoration')->onDelete('cascade');
+            $table->foreignId('prestation_decoration_id')->constrained('prestations_decoration')->onDelete('restrict');
 
-            $table->integer('quantite')->nullable();
+            $table->unsignedInteger('quantite')->nullable();
 
             $table->timestamps();
         });

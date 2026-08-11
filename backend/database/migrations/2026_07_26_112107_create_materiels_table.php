@@ -10,12 +10,18 @@ return new class extends Migration
     {
         Schema::create('materiels', function (Blueprint $table) {
             $table->id();
-            $table->string('nom');
+
+            $table->string('nom')->index();
             $table->text('description')->nullable();
             $table->string('photo');
             $table->decimal('prix_unitaire', 10, 2);
-            $table->integer('quantite_stock');
+            $table->unsignedInteger('quantite_stock')->default(0);
+
             $table->timestamps();
+
+            // CORBEILLE : un article retiré du catalogue reste visible dans
+            // les commandes passées (via commande_materiel) sans être hard-delete
+            $table->softDeletes();
         });
     }
 

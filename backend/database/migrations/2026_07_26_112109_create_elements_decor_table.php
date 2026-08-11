@@ -10,9 +10,15 @@ return new class extends Migration
     {
         Schema::create('elements_decor', function (Blueprint $table) {
             $table->id();
-            $table->string('nom');
+
+            $table->string('nom')->index();
             $table->text('description')->nullable();
+
             $table->timestamps();
+
+            // CORBEILLE : liste "fixe" en théorie, mais un élément peut être
+            // retiré sans casser les sélections déjà enregistrées côté client
+            $table->softDeletes();
         });
     }
 

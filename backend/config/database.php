@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -43,7 +42,7 @@ return [
             'synchronous' => null,
             'transaction_mode' => 'DEFERRED',
         ],
-
+            
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -59,10 +58,28 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            
+            // ======
+            // KÉVIN 
+            // ======
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                
+                // CONFIGURATION : Connexions standards (pas de ATTR_PERSISTENT pour l'instant)
+                // RAISON : Comme le nombre d'utilisateurs is inconnu, on commence léger pour économiser 
+                // la RAM. Si le trafic explose plus tard, il suffira d'activer ATTR_PERSISTENT ici.
+
+                // MODIFICATION : Mode d'erreur strict (ERRMODE_EXCEPTION)
+                // RAISON : Indispensable pour détecter immédiatement la moindre erreur SQL lors de nos 
+                // tests et sécuriser les écritures de données.
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+
+                // MODIFICATION : Maintien du chiffrement d'origine (MYSQL_ATTR_SSL_CA)
+                // RAISON : Assure la sécurité des échanges dès le premier utilisateur.
+                \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                
             ]) : [],
         ],
+
 
         'mariadb' => [
             'driver' => 'mariadb',
@@ -80,7 +97,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -110,8 +127,6 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
     ],
