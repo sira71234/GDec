@@ -3,49 +3,64 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use App\Models\Materiel;
+use App\Models\PrestationDecoration;
+use App\Models\ElementDecor;
 
 class CatalogueController extends Controller
 {
-    
-    //  Retourne la liste du materiel de location dispo
-    
-    public function materiels(): JsonResponse
+    /**
+     * Retourne la liste du matériel disponible à la location.
+     * GET /api/catalogue/materiels
+     */
+    public function materiels()
     {
-        $materiels = DB::table('materiels')->get();
+        $materiels = Materiel::select('id', 'nom', 'description', 'photo', 'prix_unitaire', 'quantite_stock')
+            ->orderBy('nom')
+            ->get();
 
         return response()->json($materiels);
     }
 
-    
-    //  retourne la liste des prestations de deco dispo
-    
-    public function prestationsDecoration(): JsonResponse
+    /**
+     * Retourne la liste des prestations de décoration proposées.
+     * GET /api/catalogue/prestations-decoration
+     */
+    public function prestationsDecoration()
     {
-        $prestations = DB::table('prestations_decoration')->get();
+        $prestations = PrestationDecoration::select('id', 'nom', 'description', 'photo', 'prix')
+            ->orderBy('nom')
+            ->get();
 
         return response()->json($prestations);
     }
 
-    
-    // retourne la liste des element decor dispo 
-
-    public function elementsDecor(): JsonResponse
+    /**
+     * Retourne la liste fixe des éléments décorables
+     * GET /api/catalogue/elements-decor
+     */
+    public function elementsDecor()
     {
-        $elements = DB::table('elements_decor')->get();
+        $elements = ElementDecor::select('id', 'nom', 'description')
+            ->orderBy('nom')
+            ->get();
 
         return response()->json($elements);
     }
 
-    
-    //  Retourne tout le catalogue en un seul appel
-    public function index(): JsonResponse
+    /**
+     * Retourne tout le catalogue en un seul appel.
+     * GET /api/catalogue
+     */
+    public function index()
     {
         return response()->json([
-            'materiels' => DB::table('materiels')->get(),
-            'prestations_decoration' => DB::table('prestations_decoration')->get(),
-            'elements_decor' => DB::table('elements_decor')->get(),
+            'materiels' => Materiel::select('id', 'nom', 'description', 'photo', 'prix_unitaire', 'quantite_stock')
+                ->orderBy('nom')->get(),
+            'prestations_decoration' => PrestationDecoration::select('id', 'nom', 'description', 'photo', 'prix')
+                ->orderBy('nom')->get(),
+            'elements_decor' => ElementDecor::select('id', 'nom', 'description')
+                ->orderBy('nom')->get(),
         ]);
     }
 }
