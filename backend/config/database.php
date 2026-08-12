@@ -100,6 +100,7 @@ return [
                 // CORRECTION : Même sécurité que pour le bloc MySQL de Kévin
                 defined('PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+            
         ],
 
         'pgsql' => [
