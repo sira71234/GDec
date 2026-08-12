@@ -75,7 +75,7 @@ return [
 
                 // MODIFICATION : Maintien du chiffrement d'origine (MYSQL_ATTR_SSL_CA)
                 // RAISON : Assure la sécurité des échanges dès le premier utilisateur.
-                \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                defined('PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null => env('MYSQL_ATTR_SSL_CA'),
                 
             ]) : [],
         ],
@@ -97,7 +97,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // CORRECTION : Même sécurité que pour le bloc MySQL de Kévin
+                defined('PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
