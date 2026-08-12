@@ -44,4 +44,5 @@ class MailNotificationService
             return false;
         }
     }
+    
 }
