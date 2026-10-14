@@ -10,7 +10,10 @@ function Header() {
 
       <span className="text-xl font-bold text-white text-center">Grace Divine Decor Services & Finnes</span>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-3">
+        <Link to="/admin/login" className="text-white/80 hover:text-white text-sm">
+          Admin
+        </Link>
         <Link to="/commande" className="bg-yellow-500 text-gray-900 font-semibold px-4 py-2 rounded-lg">
           Commander
         </Link>

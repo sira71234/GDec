@@ -1,20 +1,84 @@
 import { useState } from "react";
+import { storageUrl } from "../services/api";
+import placeholder from "../assets/hero.png";
 
-function ArticleCard({ nom, photo, prix, description  }) {
-    const [quantite, setQuantite] = useState(0);
-    return (
-  <div className="flex gap-4 p-4 border border-gray-200 rounded-xl bg-white">
-        <img className="w-24 h-24 shrink-0 object-cover rounded-lg" src={photo} alt={nom} /> 
-        <div className="flex flex-col gap-1">
-            <h3 className="font-semibold text-lg">{nom}</h3>
-            {description && <p className="text-sm text-gray-500">{description}</p>}
-            <p className="text-green-600 font-semibold"> {prix} FCFA</p>
-            <input className="w-16 border border-gray-300 rounded-md px-2 py-1" type="number" value={quantite} onChange={(event) =>
-                 setQuantite(Number(event.target.value))}  />
-  </div>
-  </div>
-  
-);
+/**
+ * Carte d'article réutilisable (location et décoration).
+ * - `article`   : { id, nom, description, photo, ... }
+ * - `prix`      : prix affiché (prix_unitaire pour le matériel, prix pour une prestation)
+ * - `quantite` / `onQuantiteChange` : mode contrôlé (facultatif)
+ * - `onAdd`     : callback d'ajout au panier (facultatif)
+ * - `selected`  : met en évidence la carte (facultatif)
+ */
+function ArticleCard({
+  article,
+  prix,
+  quantite,
+  onQuantiteChange,
+  onAdd,
+  selected = false,
+}) {
+  const [quantiteInterne, setQuantiteInterne] = useState(1);
 
-};
-export default ArticleCard
+  const quantiteCourante = quantite ?? quantiteInterne;
+  const definirQuantite = onQuantiteChange ?? setQuantiteInterne;
+  const image = storageUrl(article.photo) || placeholder;
+
+  const basculerPhoto = (event) => {
+    event.currentTarget.src = placeholder;
+  };
+
+  return (
+    <div
+      className={`flex flex-col gap-3 p-4 border-2 rounded-xl bg-white shadow-sm transition hover:shadow-md ${
+        selected ? "border-emerald-600" : "border-gray-200"
+      }`}
+    >
+      <div className="w-full h-32 overflow-hidden rounded-lg bg-emerald-50">
+        <img
+          className="w-full h-full object-cover"
+          src={image}
+          alt={article.nom}
+          loading="lazy"
+          onError={basculerPhoto}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1 grow">
+        <h3 className="font-semibold text-gray-800">{article.nom}</h3>
+        {article.description && (
+          <p className="text-sm text-gray-500 line-clamp-2">{article.description}</p>
+        )}
+        {article.quantite_stock !== undefined && (
+          <p className="text-xs text-gray-400">
+            Stock : {article.quantite_stock}
+          </p>
+        )}
+        <p className="text-green-700 font-bold mt-auto pt-2">
+          {Number(prix).toLocaleString("fr-FR")} FCFA
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          className="w-16 border border-gray-300 rounded-md px-2 py-1 text-center"
+          type="number"
+          min="1"
+          value={quantiteCourante}
+          onChange={(event) => definirQuantite(Number(event.target.value))}
+        />
+        {onAdd && (
+          <button
+            type="button"
+            onClick={() => onAdd(quantiteCourante)}
+            className="grow bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-3 py-2 rounded-lg transition"
+          >
+            Ajouter
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default ArticleCard;
