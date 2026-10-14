@@ -2,15 +2,24 @@
 
 namespace Tests\Feature;
 
-use App\Models\Client;
+use App\Models\Admin;
 use App\Models\Commande;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AdminCommandeTest extends TestCase
 {
     // Rejoue les migrations pour garantir une base SQLite propre en mémoire RAM à chaque test
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Les routes admin sont protégées : on agit en tant qu'administrateur.
+        Sanctum::actingAs(Admin::factory()->create());
+    }
 
     // ==========================================================
     // TESTS : index()
@@ -67,7 +76,7 @@ class AdminCommandeTest extends TestCase
         $response = $this->getJson("/api/admin/commandes/{$commande->id}");
 
         $response->assertOk();
-        
+
         // CORRECTION : Correspondance exacte avec les clés chargées par loadMissing() dans ton Controller
         $response->assertJsonStructure([
             'id',

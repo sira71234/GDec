@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Admin extends Authenticatable
 {
     // Hérite d'Authenticatable (pas Model) : ce modèle sert à la connexion,
     // ça active tout le système d'auth de Laravel (Auth::attempt, etc.)
     // pour la route de connexion admin dédiée .
-    use HasFactory;
+    // HasApiTokens : permet de générer des jetons Sanctum pour l'API admin.
+    use HasApiTokens, HasFactory;
 
     protected $fillable = [
         'identifiant',
@@ -23,8 +25,8 @@ class Admin extends Authenticatable
         'code_admin',
     ];
 
-    //hachage automatique à l'écriture.
-    
+    // hachage automatique à l'écriture.
+
     protected $casts = [
         'mot_de_passe' => 'hashed',
         'code_admin' => 'hashed',

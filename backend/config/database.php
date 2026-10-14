@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Pdo\Mysql;
 
 return [
 
@@ -42,7 +43,7 @@ return [
             'synchronous' => null,
             'transaction_mode' => 'DEFERRED',
         ],
-            
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -58,28 +59,27 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            
+
             // ======
-            // KÉVIN 
+            // KÉVIN
             // ======
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                
+
                 // CONFIGURATION : Connexions standards (pas de ATTR_PERSISTENT pour l'instant)
-                // RAISON : Comme le nombre d'utilisateurs is inconnu, on commence léger pour économiser 
+                // RAISON : Comme le nombre d'utilisateurs is inconnu, on commence léger pour économiser
                 // la RAM. Si le trafic explose plus tard, il suffira d'activer ATTR_PERSISTENT ici.
 
                 // MODIFICATION : Mode d'erreur strict (ERRMODE_EXCEPTION)
-                // RAISON : Indispensable pour détecter immédiatement la moindre erreur SQL lors de nos 
+                // RAISON : Indispensable pour détecter immédiatement la moindre erreur SQL lors de nos
                 // tests et sécuriser les écritures de données.
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 
                 // MODIFICATION : Maintien du chiffrement d'origine (MYSQL_ATTR_SSL_CA)
                 // RAISON : Assure la sécurité des échanges dès le premier utilisateur.
-                defined('PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null => env('MYSQL_ATTR_SSL_CA'),
-                
+                (class_exists(Mysql::class) ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+
             ]) : [],
         ],
-
 
         'mariadb' => [
             'driver' => 'mariadb',
@@ -98,9 +98,9 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 // CORRECTION : Même sécurité que pour le bloc MySQL de Kévin
-                defined('PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null => env('MYSQL_ATTR_SSL_CA'),
+                (class_exists(Mysql::class) ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
-            
+
         ],
 
         'pgsql' => [

@@ -2,14 +2,24 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Commande;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class DisponibiliteTest extends TestCase
 {
     // Nettoie et recrée la structure de base SQLite en mémoire vive à chaque test
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // /api/admin/disponibilites est protégée ; /api/disponibilites/verifier reste publique.
+        Sanctum::actingAs(Admin::factory()->create());
+    }
 
     // ==========================================================
     // TESTS : index()
