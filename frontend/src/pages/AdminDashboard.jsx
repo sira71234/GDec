@@ -10,6 +10,7 @@ import {
   getAdmin,
   logout,
   getCommandes,
+  getHistoriqueCommandes,
   updateStatut,
   getCorbeille,
   restaurerCommande,
@@ -28,6 +29,7 @@ function AdminDashboard() {
   const [onglet, setOnglet] = useState("demandes");
   const [filtre, setFiltre] = useState("");
   const [commandes, setCommandes] = useState([]);
+  const [historiqueCommandes, setHistoriqueCommandes] = useState([]);
   const [corbeille, setCorbeille] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
@@ -65,13 +67,28 @@ function AdminDashboard() {
     }
   }, []);
 
+  const chargerHistorique = useCallback(async () => {
+    setChargement(true);
+    setErreur(null);
+    try {
+      const reponse = await getHistoriqueCommandes();
+      setHistoriqueCommandes(reponse.data ?? []);
+    } catch {
+      setErreur("Impossible de charger l'historique.");
+    } finally {
+      setChargement(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (onglet === "demandes") {
       chargerCommandes();
     } else if (onglet === "corbeille") {
       chargerCorbeille();
+    } else if (onglet === "historique") {
+      chargerHistorique();
     }
-  }, [onglet, chargerCommandes, chargerCorbeille]);
+  }, [onglet, chargerCommandes, chargerCorbeille, chargerHistorique]);
 
   const changerStatut = async (id, statut) => {
     try {
@@ -140,6 +157,7 @@ function AdminDashboard() {
           {[
             { cle: "demandes", libelle: "Demandes" },
             { cle: "disponibilites", libelle: "Disponibilités" },
+            { cle: "historique", libelle: "Historique" },
             { cle: "catalogue", libelle: "Catalogue" },
             { cle: "vitrine", libelle: "Vitrine" },
             { cle: "corbeille", libelle: "Corbeille" },
@@ -190,7 +208,7 @@ function AdminDashboard() {
           )}
 
           {onglet === "disponibilites" && (
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div className="space-y-8">
               <CalendrierDisponibilite />
               <div>
                 <h3 className="font-bold text-emerald-800 mb-3">
@@ -199,6 +217,23 @@ function AdminDashboard() {
                 <ListeDisponibilite />
               </div>
             </div>
+          )}
+
+          {onglet === "historique" && (
+            <>
+              <p className="text-sm text-gray-600 mb-4">
+                Les commandes dont la date est dépassée de plus de deux jours
+                sont retirées des demandes actives et conservées ici. Cliquez sur
+                « Détails » pour consulter la commande et son journal d'actions.
+              </p>
+              <ListeDemandes
+                commandes={historiqueCommandes}
+                onChangerStatut={changerStatut}
+                onRafraichir={chargerHistorique}
+                chargement={chargement}
+                lectureSeule
+              />
+            </>
           )}
 
           {onglet === "catalogue" && <AdminCatalogue />}

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Commande;
 use App\Models\Devis;
 use App\Services\CautionCalculatorService;
+use App\Services\HistoriqueService;
 use App\Services\PdfGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +17,7 @@ class DevisController extends Controller
     public function __construct(
         private readonly CautionCalculatorService $calculateur,
         private readonly PdfGeneratorService $pdfGenerator,
+        private readonly HistoriqueService $historique,
     ) {}
 
     /**
@@ -34,6 +36,13 @@ class DevisController extends Controller
             'montant_total' => $montantTotal,
             'date_generation' => now(),
         ]);
+
+        $this->historique->enregistrer(
+            $commande,
+            'devis',
+            'Devis généré par l\'administrateur.',
+            ['devis_id' => $devis->id, 'montant_total' => $montantTotal],
+        );
 
         return response()->json([
             'message' => 'Devis généré avec succès.',

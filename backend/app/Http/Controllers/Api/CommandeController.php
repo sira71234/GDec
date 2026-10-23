@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCommandeRequest;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Services\CautionCalculatorService;
+use App\Services\HistoriqueService;
 use App\Services\MailNotificationService;
 use App\Services\PdfGeneratorService;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +28,7 @@ class CommandeController extends Controller
         CautionCalculatorService $cautionCalculator,
         PdfGeneratorService $pdfGenerator,
         MailNotificationService $mailService,
+        HistoriqueService $historique,
     ): JsonResponse {
         $donnees = $request->validated();
 
@@ -86,6 +88,17 @@ class CommandeController extends Controller
         $mailService->envoyerConfirmation($commande->load('client'), $cheminPdf);
 
         $commande->load(['client', 'materiels', 'prestationsDecoration', 'elementsDecor']);
+
+        $historique->enregistrer(
+            $commande,
+            'creation',
+            'Commande déposée par le client.',
+            [
+                'type_prestation' => $commande->type_prestation,
+                'montant_caution' => $cautionCalculator->calculerPour($commande),
+                'montant_total' => $cautionCalculator->totalGeneral($commande),
+            ],
+        );
 
         return response()->json([
             'message' => 'Votre commande a bien été enregistrée.',

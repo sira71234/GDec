@@ -46,7 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Gestion des demandes.
         Route::get('/commandes', [AdminCommandeController::class, 'index']);
-        // Route fixe avant la route dynamique {commande}.
+        // Routes fixes avant la route dynamique {commande}.
+        Route::get('/commandes/historique', [AdminCommandeController::class, 'historique']);
         Route::get('/commandes/corbeille', [AdminCommandeController::class, 'corbeille']);
         Route::get('/commandes/{commande}', [AdminCommandeController::class, 'show']);
         Route::match(['put', 'patch', 'post'], '/commandes/{commande}', [AdminCommandeController::class, 'update']);

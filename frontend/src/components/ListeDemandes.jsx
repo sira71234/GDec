@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getCommande, updateCommande } from "../services/adminService";
+import { couleurClient } from "../utils/couleurs";
 import DevisViewer from "./DevisViewer";
 
 const LIBELLES_STATUT = {
@@ -23,6 +24,23 @@ const LIBELLES_TYPE = {
 const fcfa = (valeur) =>
   `${Number(valeur || 0).toLocaleString("fr-FR")} FCFA`;
 
+const formatDateHeure = (valeur) =>
+  valeur
+    ? new Date(valeur).toLocaleString("fr-FR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      })
+    : "";
+
+const LIBELLES_ACTION = {
+  creation: "Création",
+  modification: "Modification",
+  changement_statut: "Changement de statut",
+  restauration: "Restauration",
+  suppression_definitive: "Suppression définitive",
+  devis: "Devis",
+};
+
 const versDateInput = (valeur) => (valeur ? String(valeur).slice(0, 10) : "");
 
 const initialiserFormulaire = (commande) => ({
@@ -34,7 +52,13 @@ const initialiserFormulaire = (commande) => ({
   montant_decoration: commande.montant_decoration ?? "",
 });
 
-function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement }) {
+function ListeDemandes({
+  commandes,
+  onChangerStatut,
+  onRafraichir,
+  chargement,
+  lectureSeule = false,
+}) {
   const [detail, setDetail] = useState(null);
   const [chargementDetail, setChargementDetail] = useState(false);
   const [formulaire, setFormulaire] = useState(null);
@@ -134,6 +158,7 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
               <th className="py-2 px-3 border border-emerald-600">Client</th>
               <th className="py-2 px-3 border border-emerald-600">Téléphone</th>
               <th className="py-2 px-3 border border-emerald-600">Type</th>
+              <th className="py-2 px-3 border border-emerald-600">Dernière action</th>
               <th className="py-2 px-3 border border-emerald-600">Caution</th>
               <th className="py-2 px-3 border border-emerald-600">Statut</th>
               <th className="py-2 px-3 border border-emerald-600 text-center">
@@ -149,13 +174,37 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
               >
                 <td className="py-2 px-3 border border-gray-200">{commande.id}</td>
                 <td className="py-2 px-3 border border-gray-200">
-                  {commande.client?.nom}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        couleurClient(commande.client_id).pastille
+                      }`}
+                    />
+                    {commande.client?.nom}
+                  </span>
                 </td>
                 <td className="py-2 px-3 border border-gray-200">
                   {commande.client?.telephone}
                 </td>
                 <td className="py-2 px-3 border border-gray-200">
                   {LIBELLES_TYPE[commande.type_prestation] ?? commande.type_prestation}
+                </td>
+                <td className="py-2 px-3 border border-gray-200">
+                  {commande.derniere_action ? (
+                    <>
+                      <div className="text-xs">
+                        {commande.derniere_action.description}
+                      </div>
+                      <div className="text-[11px] text-gray-500">
+                        {formatDateHeure(commande.derniere_action.created_at)}
+                        {commande.derniere_action.admin?.identifiant
+                          ? ` — ${commande.derniere_action.admin.identifiant}`
+                          : ""}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="py-2 px-3 border border-gray-200">
                   {fcfa(commande.montant_caution)}
@@ -178,7 +227,7 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                     >
                       Détails
                     </button>
-                    {commande.statut !== "valide" && (
+                    {!lectureSeule && commande.statut !== "valide" && (
                       <button
                         type="button"
                         onClick={() => onChangerStatut(commande.id, "valide")}
@@ -187,7 +236,7 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                         Valider
                       </button>
                     )}
-                    {commande.statut !== "refuse" && (
+                    {!lectureSeule && commande.statut !== "refuse" && (
                       <button
                         type="button"
                         onClick={() => onChangerStatut(commande.id, "refuse")}
@@ -224,9 +273,16 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                   </button>
                 </div>
 
-                <p className="text-sm text-gray-700 mb-1">
-                  <strong>Client :</strong> {detail.client?.nom} —{" "}
-                  {detail.client?.telephone}
+                <p className="text-sm text-gray-700 mb-1 flex items-center gap-2">
+                  <span
+                    className={`w-3 h-3 rounded-full ${
+                      couleurClient(detail.client_id).pastille
+                    }`}
+                  />
+                  <span>
+                    <strong>Client :</strong> {detail.client?.nom} —{" "}
+                    {detail.client?.telephone}
+                  </span>
                 </p>
                 {detail.client?.email && (
                   <p className="text-sm text-gray-700 mb-1">
@@ -324,7 +380,7 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                   </p>
                 </div>
 
-                {formulaire && (
+                {!lectureSeule && formulaire && (
                   <div className="mb-4 border border-gray-200 rounded-lg p-3">
                     <h4 className="font-semibold text-emerald-800 mb-2">
                       Modifier la commande
@@ -384,7 +440,7 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                         <>
                           <div>
                             <label className="block font-semibold text-gray-700 mb-1">
-                              Date de l'événement
+                              Date de la décoration
                             </label>
                             <input
                               type="date"
@@ -450,9 +506,43 @@ function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement })
                   </div>
                 )}
 
+                <div className="mb-4 border border-gray-200 rounded-lg p-3">
+                  <h4 className="font-semibold text-emerald-800 mb-2">
+                    Historique des actions
+                  </h4>
+                  {(detail.historiques ?? []).length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Aucune action enregistrée pour cette commande.
+                    </p>
+                  ) : (
+                    <ol className="space-y-2">
+                      {(detail.historiques ?? []).map((action) => (
+                        <li key={action.id} className="flex gap-2 text-sm">
+                          <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                          <div>
+                            <p className="text-gray-800">
+                              <strong>
+                                {LIBELLES_ACTION[action.action] ?? action.action}
+                              </strong>{" "}
+                              — {action.description}
+                            </p>
+                            <p className="text-[11px] text-gray-500">
+                              {formatDateHeure(action.created_at)}
+                              {action.admin?.identifiant
+                                ? ` — par ${action.admin.identifiant}`
+                                : " — par le client"}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+
                 <DevisViewer
                   commande={detail}
                   devisInitial={(detail.devis ?? [])[0] ?? null}
+                  onDevisGenere={() => ouvrirDetail(detail.id)}
                 />
               </>
             )}

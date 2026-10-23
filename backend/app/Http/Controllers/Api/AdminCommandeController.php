@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Commande;
 use App\Services\CautionCalculatorService;
+use App\Services\HistoriqueService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,11 +13,15 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminCommandeController extends Controller
 {
-    public function __construct(private readonly CautionCalculatorService $calculateur) {}
+    public function __construct(
+        private readonly CautionCalculatorService $calculateur,
+        private readonly HistoriqueService $historique,
+    ) {}
 
     /**
-     * Liste les commandes pour le tableau de bord admin, avec filtre optionnel par statut.
-     * Accessible par le composant ListeDemandes.jsx de Siracide.
+     * Liste les commandes actives pour le tableau de bord admin, avec filtre
+     * optionnel par statut. Les commandes dont la date est dépassée de plus de
+     * deux jours sont exclues (elles restent consultables dans l'historique).
      *
      * GET /api/admin/commandes
      * GET /api/admin/commandes?statut=en_attente
@@ -38,7 +43,8 @@ class AdminCommandeController extends Controller
         }
 
         // Construction de la requête avec chargement lié du client (Évite le bug N+1)
-        $query = Commande::with('client')
+        $query = Commande::with(['client', 'derniereAction.admin'])
+            ->actives()
             ->orderBy('created_at', 'desc');
 
         // Application du filtre si validé
@@ -54,8 +60,41 @@ class AdminCommandeController extends Controller
     }
 
     /**
-     * Affiche le détail complet d'une commande, avec toutes ses relations.
-     * Utile pour la vue détaillée d'une demande côté admin.
+     * Liste les commandes passées (date dépassée de plus de deux jours) :
+     * elles constituent l'historique consultable des demandes.
+     *
+     * GET /api/admin/commandes/historique
+     */
+    public function historique(Request $request): JsonResponse
+    {
+        if ($request->has('statut')) {
+            $validator = Validator::make($request->all(), [
+                'statut' => 'string|in:en_attente,valide,refuse',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+        }
+
+        $query = Commande::with(['client', 'derniereAction.admin'])
+            ->historiques()
+            ->orderByDesc('date_evenement')
+            ->orderByDesc('date_fin_location');
+
+        if ($request->has('statut')) {
+            $query->where('statut', (string) $request->query('statut'));
+        }
+
+        return response()->json($query->paginate(20), 200);
+    }
+
+    /**
+     * Affiche le détail complet d'une commande, avec ses relations et son
+     * journal d'actions.
      *
      * GET /api/admin/commandes/{id}
      */
@@ -68,6 +107,7 @@ class AdminCommandeController extends Controller
             'prestationsDecoration',
             'elementsDecor',
             'devis',
+            'historiques.admin',
         ]);
 
         // Retour JSON de la commande complète avec ses relations imbriquées
@@ -91,16 +131,34 @@ class AdminCommandeController extends Controller
             'montant_decoration' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ]);
 
+        $champs = array_keys($donnees);
+        $avant = $commande->only($champs);
+
         $commande->update($donnees);
 
         // La caution dépend des dates de location : on la recalcule.
         $commande->montant_caution = $this->calculateur->calculerPour($commande->fresh(['materiels']));
         $commande->save();
 
+        $changements = [];
+        foreach ($donnees as $champ => $valeur) {
+            $ancienne = $avant[$champ] ?? null;
+            if ((string) $ancienne !== (string) $valeur) {
+                $changements[$champ] = ['avant' => $ancienne, 'apres' => $valeur];
+            }
+        }
+
+        $this->historique->enregistrer(
+            $commande,
+            'modification',
+            "Commande modifiée par l'administrateur.",
+            ['changements' => $changements],
+        );
+
         return response()->json([
             'message' => 'Commande mise à jour.',
             'commande' => $this->avecTotaux($commande->fresh([
-                'client', 'materiels', 'prestationsDecoration', 'elementsDecor', 'devis',
+                'client', 'materiels', 'prestationsDecoration', 'elementsDecor', 'devis', 'historiques.admin',
             ])),
         ]);
     }
@@ -129,8 +187,17 @@ class AdminCommandeController extends Controller
         // Validation de l'entrée pour le tableau de bord
         $validated = $request->validate(['statut' => 'required|in:en_attente,valide,refuse']);
 
+        $ancienStatut = $commande->statut;
+
         // Mise à jour simple en BDD
         $commande->update(['statut' => $validated['statut']]);
+
+        $this->historique->enregistrer(
+            $commande,
+            'changement_statut',
+            "Statut modifié : {$ancienStatut} → {$validated['statut']}.",
+            ['avant' => $ancienStatut, 'apres' => $validated['statut']],
+        );
 
         // 3. Retour JSON avec le modèle client rafraîchi
         return response()->json([
@@ -163,6 +230,12 @@ class AdminCommandeController extends Controller
         $commande = Commande::withTrashed()->findOrFail($id);
         $commande->restore();
 
+        $this->historique->enregistrer(
+            $commande,
+            'restauration',
+            'Commande restaurée depuis la corbeille.',
+        );
+
         return response()->json(['message' => 'Commande restaurée']);
     }
 
@@ -174,6 +247,13 @@ class AdminCommandeController extends Controller
     {
         $commande = Commande::withTrashed()->findOrFail($id);
 
+        $details = [
+            'commande_id' => $commande->id,
+            'client_id' => $commande->client_id,
+            'type_prestation' => $commande->type_prestation,
+            'statut' => $commande->statut,
+        ];
+
         // Sécurité on force le check avant le vrai DELETE
         try {
             $commande->forceDelete();
@@ -182,6 +262,12 @@ class AdminCommandeController extends Controller
                 'message' => 'Impossible : des données liées existent encore.',
             ], 409);
         }
+
+        $this->historique->enregistrerDetachee(
+            'suppression_definitive',
+            "Commande #{$details['commande_id']} supprimée définitivement.",
+            $details,
+        );
 
         return response()->json(['message' => 'Commande supprimée définitivement']);
     }

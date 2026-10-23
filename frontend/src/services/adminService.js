@@ -50,6 +50,12 @@ export async function getCommande(id) {
   return data;
 }
 
+// Commandes passées (date dépassée de plus de deux jours).
+export async function getHistoriqueCommandes(params = {}) {
+  const { data } = await api.get("/admin/commandes/historique", { params });
+  return data;
+}
+
 export async function updateStatut(id, statut) {
   const { data } = await api.patch(`/admin/commandes/${id}/statut`, { statut });
   return data;

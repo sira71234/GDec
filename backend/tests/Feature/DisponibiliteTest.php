@@ -114,7 +114,7 @@ class DisponibiliteTest extends TestCase
         $response->assertJson(['disponible' => true]);
     }
 
-    public function test_une_date_qui_chevauche_une_reservation_nest_pas_disponible()
+    public function test_une_date_qui_chevauche_une_reservation_reste_disponible()
     {
         Commande::factory()->location()->create([
             'statut' => 'valide',
@@ -125,7 +125,41 @@ class DisponibiliteTest extends TestCase
         $response = $this->getJson('/api/disponibilites/verifier?date_debut=2026-09-03&date_fin=2026-09-04');
 
         $response->assertOk();
-        $response->assertJson(['disponible' => false]);
+        $response->assertJson([
+            'disponible' => true,
+            'chevauchements' => 1,
+        ]);
+    }
+
+    public function test_le_calendrier_inclut_les_decorations()
+    {
+        Commande::factory()->decoration()->create([
+            'statut' => 'valide',
+            'date_evenement' => '2026-09-15',
+            'duree_decoration' => 2,
+            'type_evenement' => 'Mariage',
+        ]);
+
+        $response = $this->getJson('/api/admin/disponibilites?mois=9&annee=2026');
+
+        $response->assertOk();
+        $response->assertJsonCount(1);
+        $response->assertJsonPath('0.type_prestation', 'decoration');
+        $this->assertStringStartsWith('2026-09-15', (string) $response->json('0.date_evenement'));
+    }
+
+    public function test_le_filtre_mensuel_inclut_les_sejours_a_cheval_sur_deux_mois()
+    {
+        Commande::factory()->location()->create([
+            'statut' => 'valide',
+            'date_debut_location' => '2026-08-30',
+            'date_fin_location' => '2026-09-02',
+        ]);
+
+        $response = $this->getJson('/api/admin/disponibilites?mois=9&annee=2026');
+
+        $response->assertOk();
+        $response->assertJsonCount(1);
     }
 
     public function test_une_reservation_refusee_ne_bloque_pas_la_date()

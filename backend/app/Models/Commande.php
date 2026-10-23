@@ -86,4 +86,62 @@ class Commande extends Model
     {
         return $this->hasMany(Devis::class);
     }
+
+    // Journal des actions effectuées sur la commande (création, modification…).
+    public function historiques()
+    {
+        return $this->hasMany(ActionHistorique::class)->latest();
+    }
+
+    // Dernière action, affichée directement dans la liste des demandes.
+    public function derniereAction()
+    {
+        return $this->hasOne(ActionHistorique::class)->latestOfMany();
+    }
+
+    /**
+     * Commandes encore actives : leur date de référence n'est pas dépassée
+     * de plus de deux jours. Les commandes sans aucune date restent actives.
+     */
+    public function scopeActives($query)
+    {
+        $limite = now()->subDays(2)->toDateString();
+
+        return $query->where(function ($q) use ($limite) {
+            $q->where(function ($q2) use ($limite) {
+                $q2->whereNotNull('date_evenement')
+                    ->whereDate('date_evenement', '>=', $limite);
+            })->orWhere(function ($q2) use ($limite) {
+                $q2->whereNotNull('date_fin_location')
+                    ->whereDate('date_fin_location', '>=', $limite);
+            })->orWhere(function ($q2) {
+                $q2->whereNull('date_evenement')
+                    ->whereNull('date_fin_location');
+            });
+        });
+    }
+
+    /**
+     * Commandes passées : toutes leurs dates connues sont antérieures à
+     * (aujourd'hui - 2 jours). Elles basculent dans l'historique.
+     */
+    public function scopeHistoriques($query)
+    {
+        $limite = now()->subDays(2)->toDateString();
+
+        return $query
+            ->where(function ($q) {
+                $q->whereNotNull('date_evenement')
+                    ->orWhereNotNull('date_fin_location');
+            })
+            ->where(function ($q) use ($limite) {
+                $q->where(function ($q2) use ($limite) {
+                    $q2->whereNull('date_evenement')
+                        ->orWhereDate('date_evenement', '<', $limite);
+                })->where(function ($q2) use ($limite) {
+                    $q2->whereNull('date_fin_location')
+                        ->orWhereDate('date_fin_location', '<', $limite);
+                });
+            });
+    }
 }
