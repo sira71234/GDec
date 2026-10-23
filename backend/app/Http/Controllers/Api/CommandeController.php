@@ -31,7 +31,15 @@ class CommandeController extends Controller
         $donnees = $request->validated();
 
         $commande = DB::transaction(function () use ($request, $donnees, $cautionCalculator): Commande {
-            $client = Client::create($donnees['client']);
+            // Le téléphone est l'identifiant du client : on réutilise la fiche
+            // existante pour regrouper les commandes d'une même personne.
+            $client = Client::where('telephone', $donnees['client']['telephone'])->first();
+
+            if ($client) {
+                $client->update($donnees['client']);
+            } else {
+                $client = Client::create($donnees['client']);
+            }
 
             // Stockage optionnel de la pièce d'identité (location).
             $pieceIdentitePhoto = null;
@@ -44,6 +52,8 @@ class CommandeController extends Controller
                 'statut' => 'en_attente',
                 'date_debut_location' => $donnees['date_debut_location'] ?? null,
                 'date_fin_location' => $donnees['date_fin_location'] ?? null,
+                'date_evenement' => $donnees['date_evenement'] ?? null,
+                'duree_decoration' => $donnees['duree_decoration'] ?? null,
                 'piece_identite_type' => $donnees['piece_identite_type'] ?? null,
                 'piece_identite_photo' => $pieceIdentitePhoto,
                 'type_evenement' => $donnees['type_evenement'] ?? null,
@@ -75,9 +85,15 @@ class CommandeController extends Controller
         $cheminPdf = $pdfGenerator->genererRecapitulatif($commande);
         $mailService->envoyerConfirmation($commande->load('client'), $cheminPdf);
 
+        $commande->load(['client', 'materiels', 'prestationsDecoration', 'elementsDecor']);
+
         return response()->json([
-            'message' => 'Votre commande a bien été enregistrée. Un email de confirmation vous a été envoyé.',
-            'commande' => $commande->load(['client', 'materiels', 'prestationsDecoration', 'elementsDecor']),
+            'message' => 'Votre commande a bien été enregistrée.',
+            'commande' => array_merge($commande->toArray(), [
+                'montant_location' => $cautionCalculator->totalLocation($commande),
+                'montant_decoration' => $cautionCalculator->totalDecorationEffectif($commande),
+                'montant_total' => $cautionCalculator->totalGeneral($commande),
+            ]),
         ], 201);
     }
 }

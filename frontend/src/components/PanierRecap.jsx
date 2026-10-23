@@ -33,6 +33,7 @@ function PanierRecap() {
     materiels,
     prestations,
     elements,
+    decoration,
     updateQuantiteMateriel,
     removeMateriel,
     updateQuantitePrestation,
@@ -134,6 +135,55 @@ function PanierRecap() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {(decoration.type_evenement ||
+            decoration.date_evenement ||
+            decoration.theme ||
+            decoration.couleurs) && (
+            <div className="mb-6 bg-emerald-50 rounded-lg p-4">
+              <h3 className="font-semibold text-emerald-800 mb-2">
+                Détails de la décoration
+              </h3>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
+                {decoration.type_evenement && (
+                  <div>
+                    <dt className="inline font-semibold">Événement : </dt>
+                    <dd className="inline">{decoration.type_evenement}</dd>
+                  </div>
+                )}
+                {decoration.date_evenement && (
+                  <div>
+                    <dt className="inline font-semibold">Date : </dt>
+                    <dd className="inline">{decoration.date_evenement}</dd>
+                  </div>
+                )}
+                {decoration.duree_decoration && (
+                  <div>
+                    <dt className="inline font-semibold">Durée : </dt>
+                    <dd className="inline">{decoration.duree_decoration} jour(s)</dd>
+                  </div>
+                )}
+                {decoration.nombre_personnes && (
+                  <div>
+                    <dt className="inline font-semibold">Invités : </dt>
+                    <dd className="inline">{decoration.nombre_personnes}</dd>
+                  </div>
+                )}
+                {decoration.theme && (
+                  <div>
+                    <dt className="inline font-semibold">Thème : </dt>
+                    <dd className="inline">{decoration.theme}</dd>
+                  </div>
+                )}
+                {decoration.couleurs && (
+                  <div>
+                    <dt className="inline font-semibold">Couleurs : </dt>
+                    <dd className="inline">{decoration.couleurs}</dd>
+                  </div>
+                )}
+              </dl>
             </div>
           )}
 

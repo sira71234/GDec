@@ -62,6 +62,8 @@
         <h2>Détails décoration</h2>
         <p>
             Événement : {{ $commande->type_evenement }}<br>
+            @if($commande->date_evenement) Date : {{ \Carbon\Carbon::parse($commande->date_evenement)->format('d/m/Y') }}<br> @endif
+            @if($commande->duree_decoration) Durée : {{ $commande->duree_decoration }} jour(s)<br> @endif
             @if($commande->theme) Thème : {{ $commande->theme }}<br> @endif
             @if($commande->couleurs) Couleurs : {{ $commande->couleurs }}<br> @endif
             Nombre de personnes : {{ $commande->nombre_personnes }}
@@ -103,6 +105,22 @@
             </ul>
         @endif
     @endif
+
+    @if(in_array($commande->type_prestation, ['location', 'les_deux']))
+        <div class="total">
+            Sous-total location : {{ number_format($montantLocation, 0, ',', ' ') }} FCFA
+        </div>
+    @endif
+
+    @if(in_array($commande->type_prestation, ['decoration', 'les_deux']))
+        <div class="total">
+            Sous-total décoration : {{ number_format($montantDecoration, 0, ',', ' ') }} FCFA
+        </div>
+    @endif
+
+    <div class="total">
+        Montant total : {{ number_format($montantTotal, 0, ',', ' ') }} FCFA
+    </div>
 
     @if($commande->montant_caution > 0)
         <div class="total">

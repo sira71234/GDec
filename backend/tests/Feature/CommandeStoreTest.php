@@ -85,6 +85,8 @@ class CommandeStoreTest extends TestCase
                 'telephone' => '0700000000',
             ],
             'type_evenement' => 'Mariage',
+            'date_evenement' => now()->addDays(10)->toDateString(),
+            'duree_decoration' => 2,
             'theme' => 'Champêtre',
             'couleurs' => 'Vert et blanc',
             'nombre_personnes' => 120,
@@ -141,5 +143,45 @@ class CommandeStoreTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['type_prestation']);
+    }
+
+    public function test_une_decoration_sans_date_ni_duree_est_rejetee()
+    {
+        $prestation = PrestationDecoration::factory()->create();
+
+        $response = $this->postJson('/api/commandes', [
+            'type_prestation' => 'decoration',
+            'client' => ['nom' => 'Kossi', 'telephone' => '0700000000'],
+            'type_evenement' => 'Mariage',
+            'prestations_decoration' => [
+                ['id' => $prestation->id, 'quantite' => 1],
+            ],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['date_evenement', 'duree_decoration']);
+    }
+
+    public function test_le_telephone_identifie_le_client_et_regroupe_ses_commandes()
+    {
+        $materiel = Materiel::factory()->create(['prix_unitaire' => 1000]);
+
+        $payload = fn (string $nom) => [
+            'type_prestation' => 'location',
+            'client' => ['nom' => $nom, 'telephone' => '0199999999'],
+            'date_debut_location' => now()->addDays(5)->toDateString(),
+            'date_fin_location' => now()->addDays(6)->toDateString(),
+            'piece_identite_type' => 'CNI',
+            'piece_identite_photo' => UploadedFile::fake()->image('cni.jpg'),
+            'materiels' => [['id' => $materiel->id, 'quantite' => 1]],
+        ];
+
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload('Premier nom'))->assertCreated();
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload('Nom mis à jour'))->assertCreated();
+
+        // Une seule fiche client pour ce numéro, avec le nom le plus récent.
+        $this->assertDatabaseCount('clients', 1);
+        $this->assertDatabaseHas('clients', ['telephone' => '0199999999', 'nom' => 'Nom mis à jour']);
+        $this->assertDatabaseCount('commandes', 2);
     }
 }

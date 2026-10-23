@@ -101,7 +101,7 @@ function PhotoUploader({ label = "Photo", fichier, onFichier, photoExistante, re
         <img
           src={apercu}
           alt="Aperçu"
-          className="h-40 w-full rounded-lg object-cover border border-gray-200"
+          className="h-40 w-full rounded-lg object-contain bg-gray-50 border border-gray-200"
         />
       )}
 

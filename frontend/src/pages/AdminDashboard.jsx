@@ -183,6 +183,7 @@ function AdminDashboard() {
               <ListeDemandes
                 commandes={commandes}
                 onChangerStatut={changerStatut}
+                onRafraichir={chargerCommandes}
                 chargement={chargement}
               />
             </>

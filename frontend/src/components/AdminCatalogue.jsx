@@ -152,7 +152,7 @@ function AdminCatalogue() {
     } catch (err) {
       const details = err.response?.data?.errors;
       const premier = details ? Object.values(details)[0]?.[0] : null;
-      setErreur(premier || err.response?.data?.message || "Enregistrement impossible.");
+      setErreur(premier || "Enregistrement impossible. Vérifiez les champs.");
     }
   };
 

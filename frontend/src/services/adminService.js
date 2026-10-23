@@ -55,6 +55,12 @@ export async function updateStatut(id, statut) {
   return data;
 }
 
+// Modifie une commande (montant décoration, dates, statut) avant le devis.
+export async function updateCommande(id, donnees) {
+  const { data } = await api.patch(`/admin/commandes/${id}`, donnees);
+  return data;
+}
+
 export async function getCorbeille() {
   const { data } = await api.get("/admin/commandes/corbeille");
   return data;

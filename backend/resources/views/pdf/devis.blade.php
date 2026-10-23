@@ -70,6 +70,12 @@
         @if($commande->type_evenement)
             <p>Événement : {{ $commande->type_evenement }}</p>
         @endif
+        @if($commande->date_evenement)
+            <p>Date : {{ \Carbon\Carbon::parse($commande->date_evenement)->format('d/m/Y') }}</p>
+        @endif
+        @if($commande->duree_decoration)
+            <p>Durée : {{ $commande->duree_decoration }} jour(s)</p>
+        @endif
         @if($commande->prestationsDecoration->isNotEmpty())
             <table>
                 <thead>

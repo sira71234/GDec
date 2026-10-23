@@ -61,8 +61,8 @@ function AdminVitrine() {
       setVitrine(reponse.vitrine);
       setBanniereImage(null);
       setMessage("Bannière enregistrée.");
-    } catch (err) {
-      setErreur(err.response?.data?.message || "Enregistrement de la bannière impossible.");
+    } catch {
+      setErreur("Enregistrement de la bannière impossible. Vérifiez les champs.");
     }
   };
 

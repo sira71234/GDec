@@ -172,4 +172,23 @@ class AdminCommandeTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseMissing('commandes', ['id' => $commandeId]);
     }
+
+    public function test_ladmin_peut_fixer_le_montant_de_la_decoration_avant_le_devis()
+    {
+        $commande = Commande::factory()->decoration()->create([
+            'montant_decoration' => null,
+        ]);
+
+        $response = $this->patchJson("/api/admin/commandes/{$commande->id}", [
+            'montant_decoration' => 75000,
+            'duree_decoration' => 3,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('commande.montant_decoration', '75000.00');
+
+        $this->assertEquals(75000, $response->json('commande.montant_decoration_effectif'));
+        $this->assertEquals(75000, $response->json('commande.montant_total'));
+        $this->assertEquals(75000, (float) $commande->fresh()->montant_decoration);
+    }
 }

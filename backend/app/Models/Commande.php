@@ -19,8 +19,11 @@ class Commande extends Model
         'type_prestation',      // enum: location / decoration / les_deux
         'statut',                // enum: en_attente / valide / refuse
         'montant_caution',
+        'montant_decoration',
         'date_debut_location',
         'date_fin_location',
+        'date_evenement',
+        'duree_decoration',
         'piece_identite_type',
         'piece_identite_photo',
         'type_evenement',
@@ -32,8 +35,11 @@ class Commande extends Model
 
     protected $casts = [
         'montant_caution' => 'decimal:2',
+        'montant_decoration' => 'decimal:2',
         'date_debut_location' => 'date',
         'date_fin_location' => 'date',
+        'date_evenement' => 'date',
+        'duree_decoration' => 'integer',
         'nombre_personnes' => 'integer',
     ];
 

@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Commande;
 use App\Models\Devis;
 use App\Models\Materiel;
+use App\Models\PrestationDecoration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -59,5 +60,21 @@ class DevisTest extends TestCase
 
         $this->postJson("/api/admin/commandes/{$commande->id}/devis")
             ->assertStatus(401);
+    }
+
+    public function test_le_devis_utilise_le_montant_de_decoration_fixe_par_ladmin()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $commande = Commande::factory()->decoration()->create(['montant_decoration' => null]);
+        $prestation = PrestationDecoration::factory()->create(['prix' => 20000]);
+        $commande->prestationsDecoration()->attach($prestation->id, ['quantite' => 1]);
+
+        // L'admin fixe un forfait décoration supérieur au calcul automatique.
+        $commande->update(['montant_decoration' => 75000]);
+
+        $this->postJson("/api/admin/commandes/{$commande->id}/devis")->assertCreated();
+
+        $this->assertEquals(75000, (float) Devis::first()->montant_total);
     }
 }

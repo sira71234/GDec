@@ -51,8 +51,10 @@ class StoreCommandeRequest extends FormRequest
             'piece_identite_type' => [Rule::requiredIf($besoinLocation), 'nullable', 'string', 'max:255'],
             'piece_identite_photo' => [Rule::requiredIf($besoinLocation), 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
 
-            // Décoration : type d'événement obligatoire.
+            // Décoration : type d'événement, date et durée obligatoires.
             'type_evenement' => [Rule::requiredIf($besoinDecoration), 'nullable', 'string', 'max:255'],
+            'date_evenement' => [Rule::requiredIf($besoinDecoration), 'nullable', 'date', 'after_or_equal:today'],
+            'duree_decoration' => [Rule::requiredIf($besoinDecoration), 'nullable', 'integer', 'min:1'],
             'theme' => ['nullable', 'string', 'max:2000'],
             'couleurs' => ['nullable', 'string', 'max:255'],
             'nombre_personnes' => ['nullable', 'integer', 'min:1'],
@@ -92,6 +94,11 @@ class StoreCommandeRequest extends FormRequest
             'piece_identite_type.required_if' => "Le type de pièce d'identité est obligatoire pour une location.",
             'piece_identite_photo.required_if' => "La photo de la pièce d'identité est obligatoire pour une location.",
             'type_evenement.required_if' => "Le type d'événement est obligatoire pour la décoration.",
+            'date_evenement.required_if' => "La date de l'événement est obligatoire pour la décoration.",
+            'date_evenement.after_or_equal' => "La date de l'événement doit être aujourd'hui ou ultérieure.",
+            'duree_decoration.required_if' => 'La durée de la décoration est obligatoire.',
+            'duree_decoration.min' => 'La durée de la décoration doit être d\'au moins un jour.',
+            'client.email.email' => "L'adresse email est invalide.",
             'materiels.required_if' => 'Sélectionnez au moins un matériel à louer.',
         ];
     }

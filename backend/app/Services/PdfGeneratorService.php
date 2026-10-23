@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 class PdfGeneratorService
 {
+    public function __construct(private readonly CautionCalculatorService $calculateur) {}
+
     /**
      * Génère le PDF récapitulatif d'une commande et le sauvegarde sur le disque.
      * Retourne le chemin relatif du fichier généré .
@@ -21,6 +23,9 @@ class PdfGeneratorService
         // Chargement de la vue Blade dédiée au rendu graphique du PDF
         $pdf = Pdf::loadView('pdf.recapitulatif', [
             'commande' => $commande,
+            'montantLocation' => $this->calculateur->totalLocation($commande),
+            'montantDecoration' => $this->calculateur->totalDecorationEffectif($commande),
+            'montantTotal' => $this->calculateur->totalGeneral($commande),
         ]);
 
         // Génération d'un nom de fichier unique et sécurisé

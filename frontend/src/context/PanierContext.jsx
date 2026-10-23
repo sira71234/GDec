@@ -10,6 +10,8 @@ const LOCATION_VIDE = {
 };
 const DECORATION_VIDE = {
   type_evenement: "",
+  date_evenement: "",
+  duree_decoration: "1",
   theme: "",
   couleurs: "",
   nombre_personnes: "",

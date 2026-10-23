@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CommandeConfirmationMail;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Models\ElementDecor;
@@ -130,7 +131,7 @@ class CommandeTest extends TestCase
         $materiel = Materiel::factory()->create();
         $commande->materiels()->attach($materiel->id, ['quantite' => 2]);
 
-        $service = new PdfGeneratorService();
+        $service = app(PdfGeneratorService::class);
         $chemin = $service->genererRecapitulatif($commande);
 
         Storage::disk('public')->assertExists($chemin);
@@ -143,17 +144,17 @@ class CommandeTest extends TestCase
         $client = Client::factory()->create(['email' => 'client@test.com']);
         $commande = Commande::factory()->for($client)->lesDeux()->create();
 
-        $pdfService = new PdfGeneratorService();
+        $pdfService = app(PdfGeneratorService::class);
         $chemin = $pdfService->genererRecapitulatif($commande);
 
-        $mailService = new MailNotificationService();
+        $mailService = new MailNotificationService;
         $resultat = $mailService->envoyerConfirmation($commande, $chemin);
 
         $this->assertTrue($resultat);
-        Mail::assertQueued(\App\Mail\CommandeConfirmationMail::class, function ($mail) use ($commande) {
-        return $mail->commande->id === $commande->id;
-    });
-    
+        Mail::assertQueued(CommandeConfirmationMail::class, function ($mail) use ($commande) {
+            return $mail->commande->id === $commande->id;
+        });
+
     }
 
     public function test_lemail_de_confirmation_ne_part_pas_si_le_client_na_pas_demail()
@@ -161,7 +162,7 @@ class CommandeTest extends TestCase
         $client = Client::factory()->create(['email' => null]);
         $commande = Commande::factory()->for($client)->create();
 
-        $mailService = new MailNotificationService();
+        $mailService = new MailNotificationService;
         $resultat = $mailService->envoyerConfirmation($commande, 'devis/fichier_test.pdf');
 
         $this->assertFalse($resultat);

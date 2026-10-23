@@ -22,9 +22,12 @@ function AdminLogin() {
       await login(identifiant, motDePasse, codeAdmin);
       navigate("/admin/dashboard", { replace: true });
     } catch (error) {
+      const statut = error.response?.status;
+      const message = error.response?.data?.message;
       setErreur(
-        error.response?.data?.message ||
-          "Connexion refusée. Vérifiez vos identifiants et le code admin.",
+        statut === 401 || statut === 422
+          ? message || "Connexion refusée. Vérifiez vos identifiants et le code admin."
+          : "Connexion impossible. Veuillez réessayer.",
       );
     } finally {
       setEnvoi(false);

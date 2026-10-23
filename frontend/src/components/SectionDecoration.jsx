@@ -19,6 +19,7 @@ const TYPES_EVENEMENT = [
 function SectionDecoration() {
   const {
     addPrestation,
+    removePrestation,
     prestations: panierPrestations,
     elements,
     toggleElement,
@@ -82,6 +83,29 @@ function SectionDecoration() {
             min="0"
             value={decoration.nombre_personnes}
             onChange={(e) => updateDecoration("nombre_personnes", e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Date de l'événement <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={decoration.date_evenement}
+            onChange={(e) => updateDecoration("date_evenement", e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Durée (jours) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={decoration.duree_decoration}
+            onChange={(e) => updateDecoration("duree_decoration", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
         </div>
@@ -166,9 +190,18 @@ function SectionDecoration() {
               selected={quantiteDansPanier(prestation.id) > 0}
             />
             {quantiteDansPanier(prestation.id) > 0 && (
-              <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
-                {quantiteDansPanier(prestation.id)}
-              </span>
+              <>
+                <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
+                  {quantiteDansPanier(prestation.id)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removePrestation(prestation.id)}
+                  className="mt-1 w-full text-xs font-semibold text-red-600 hover:underline"
+                >
+                  Annuler l'ajout
+                </button>
+              </>
             )}
           </div>
         ))}

@@ -51,6 +51,27 @@ class CautionCalculatorService
     }
 
     /**
+     * Montant de décoration retenu : le forfait saisi par l'administrateur
+     * s'il existe, sinon la somme des prestations sélectionnées.
+     */
+    public function totalDecorationEffectif(Commande $commande): float
+    {
+        if ($commande->montant_decoration !== null) {
+            return round((float) $commande->montant_decoration, 2);
+        }
+
+        return $this->totalDecoration($commande);
+    }
+
+    /**
+     * Montant total de la commande (location + décoration effective).
+     */
+    public function totalGeneral(Commande $commande): float
+    {
+        return round($this->totalLocation($commande) + $this->totalDecorationEffectif($commande), 2);
+    }
+
+    /**
      * Calcule le montant de la caution de la commande.
      * Formule : total de location × taux de caution.
      * Une commande « décoration seule » n'entraîne aucune caution.

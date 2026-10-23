@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ArticleCard from "./ArticleCard";
+import PhotoUploader from "./PhotoUploader";
 import { usePanier } from "../context/usePanier";
 import { getMateriels } from "../services/catalogueService";
 import { verifierDisponibilite } from "../services/commandeService";
@@ -14,6 +15,7 @@ const TYPES_PIECE = [
 function SectionLocation() {
   const {
     addMateriel,
+    removeMateriel,
     materiels: panierMateriels,
     location,
     updateLocation,
@@ -135,16 +137,11 @@ function SectionLocation() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Photo de la pièce (JPG/PNG)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) =>
-              updateLocation("piece_identite_photo", e.target.files?.[0] ?? null)
-            }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          <PhotoUploader
+            label="Photo de la pièce"
+            fichier={location.piece_identite_photo}
+            onFichier={(fichier) => updateLocation("piece_identite_photo", fichier)}
+            requis
           />
         </div>
       </div>
@@ -162,9 +159,18 @@ function SectionLocation() {
               selected={quantiteDansPanier(materiel.id) > 0}
             />
             {quantiteDansPanier(materiel.id) > 0 && (
-              <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
-                {quantiteDansPanier(materiel.id)}
-              </span>
+              <>
+                <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
+                  {quantiteDansPanier(materiel.id)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeMateriel(materiel.id)}
+                  className="mt-1 w-full text-xs font-semibold text-red-600 hover:underline"
+                >
+                  Annuler l'ajout
+                </button>
+              </>
             )}
           </div>
         ))}

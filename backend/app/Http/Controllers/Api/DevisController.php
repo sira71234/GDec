@@ -25,8 +25,7 @@ class DevisController extends Controller
      */
     public function generer(Commande $commande): JsonResponse
     {
-        $montantTotal = $this->calculateur->totalLocation($commande)
-            + $this->calculateur->totalDecoration($commande);
+        $montantTotal = $this->calculateur->totalGeneral($commande);
 
         $cheminPdf = $this->pdfGenerator->genererDevis($commande, $montantTotal);
 

@@ -19,6 +19,7 @@ function ArticleCard({
   selected = false,
 }) {
   const [quantiteInterne, setQuantiteInterne] = useState(1);
+  const [agrandie, setAgrandie] = useState(false);
 
   const quantiteCourante = quantite ?? quantiteInterne;
   const definirQuantite = onQuantiteChange ?? setQuantiteInterne;
@@ -34,15 +35,30 @@ function ArticleCard({
         selected ? "border-emerald-600" : "border-gray-200"
       }`}
     >
-      <div className="w-full h-32 overflow-hidden rounded-lg bg-emerald-50">
+      <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg bg-emerald-50">
         <img
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition duration-300 hover:scale-105 cursor-zoom-in"
           src={image}
           alt={article.nom}
           loading="lazy"
+          onClick={() => setAgrandie(true)}
           onError={basculerPhoto}
         />
       </div>
+
+      {agrandie && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setAgrandie(false)}
+          role="presentation"
+        >
+          <img
+            src={image}
+            alt={article.nom}
+            className="max-h-[85vh] max-w-full object-contain rounded-lg bg-white"
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-1 grow">
         <h3 className="font-semibold text-gray-800">{article.nom}</h3>

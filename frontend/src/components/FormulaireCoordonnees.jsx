@@ -43,9 +43,9 @@ function FormulaireCoordonnees() {
     }
 
     if (typePrestation === "decoration" || typePrestation === "les_deux") {
-      if (decoration.type_evenement) {
-        data.append("type_evenement", decoration.type_evenement);
-      }
+      data.append("type_evenement", decoration.type_evenement);
+      data.append("date_evenement", decoration.date_evenement);
+      data.append("duree_decoration", decoration.duree_decoration || "1");
       if (decoration.theme) data.append("theme", decoration.theme);
       if (decoration.couleurs) data.append("couleurs", decoration.couleurs);
       if (decoration.nombre_personnes) {
@@ -73,30 +73,36 @@ function FormulaireCoordonnees() {
 
   const valider = () => {
     const erreurs = {};
-    if (!client.nom.trim()) erreurs["client[nom]"] = "Le nom est obligatoire.";
+    if (!client.nom.trim()) erreurs["client.nom"] = "Le nom est obligatoire.";
     if (!client.telephone.trim()) {
-      erreurs["client[telephone]"] = "Le téléphone est obligatoire.";
+      erreurs["client.telephone"] = "Le numéro de téléphone est obligatoire.";
     }
     if (client.email && !/^\S+@\S+\.\S+$/.test(client.email)) {
-      erreurs["client[email]"] = "Email invalide.";
+      erreurs["client.email"] = "L'adresse email est invalide.";
     }
     if (typePrestation === "location" || typePrestation === "les_deux") {
       if (!location.date_debut_location) {
-        erreurs["date_debut_location"] = "Date de début requise.";
+        erreurs["date_debut_location"] = "La date de début de location est obligatoire.";
       }
       if (!location.date_fin_location) {
-        erreurs["date_fin_location"] = "Date de fin requise.";
+        erreurs["date_fin_location"] = "La date de fin de location est obligatoire.";
       }
       if (!location.piece_identite_type) {
-        erreurs["piece_identite_type"] = "Type de pièce requis.";
+        erreurs["piece_identite_type"] = "Le type de pièce d'identité est obligatoire.";
       }
       if (!location.piece_identite_photo) {
-        erreurs["piece_identite_photo"] = "Photo de la pièce requise.";
+        erreurs["piece_identite_photo"] = "La photo de la pièce d'identité est obligatoire.";
       }
     }
     if (typePrestation === "decoration" || typePrestation === "les_deux") {
       if (!decoration.type_evenement) {
-        erreurs["type_evenement"] = "Type d'événement requis.";
+        erreurs["type_evenement"] = "Le type d'événement est obligatoire.";
+      }
+      if (!decoration.date_evenement) {
+        erreurs["date_evenement"] = "La date de l'événement est obligatoire.";
+      }
+      if (!decoration.duree_decoration || Number(decoration.duree_decoration) < 1) {
+        erreurs["duree_decoration"] = "La durée de la décoration doit être d'au moins un jour.";
       }
     }
     setErreursApi(erreurs);
@@ -128,11 +134,14 @@ function FormulaireCoordonnees() {
       const details = error.response?.data?.errors;
       if (details) {
         setErreursApi(details);
+        setErreur("Certains champs sont invalides. Merci de les corriger.");
+      } else {
+        // On n'expose jamais les erreurs système brutes dans l'interface.
+        setErreursApi({});
+        setErreur(
+          "Une erreur est survenue. Veuillez réessayer dans un instant.",
+        );
       }
-      setErreur(
-        error.response?.data?.message ||
-          "Une erreur est survenue lors de l'envoi de votre demande.",
-      );
     } finally {
       setEnvoi(false);
     }
@@ -144,6 +153,13 @@ function FormulaireCoordonnees() {
     return <p className="text-red-600 text-xs mt-1">{[].concat(valeur)[0]}</p>;
   };
 
+  // Les erreurs hors coordonnées (dates, pièce, décoration) sont regroupées
+  // dans un encart pour rester visibles même plus bas dans la page.
+  const champsClient = ["client.nom", "client.telephone", "client.email"];
+  const autresErreurs = Object.entries(erreursApi).filter(
+    ([champ]) => !champsClient.includes(champ),
+  );
+
   if (succes) {
     return (
       <section className="max-w-2xl mx-auto my-8 p-6 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
@@ -151,6 +167,12 @@ function FormulaireCoordonnees() {
           Demande enregistrée
         </h2>
         <p className="text-gray-700 mb-2">{succes.message}</p>
+        <p className="text-gray-700 mb-1">
+          Total de la demande :{" "}
+          <strong>
+            {Number(succes.commande?.montant_total || 0).toLocaleString("fr-FR")} FCFA
+          </strong>
+        </p>
         <p className="text-gray-700 mb-4">
           Caution à régler :{" "}
           <strong>
@@ -182,7 +204,7 @@ function FormulaireCoordonnees() {
             onChange={(e) => updateClient("nom", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
-          {messageChamp("client[nom]")}
+          {messageChamp("client.nom")}
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -194,7 +216,7 @@ function FormulaireCoordonnees() {
             onChange={(e) => updateClient("telephone", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
-          {messageChamp("client[telephone]")}
+          {messageChamp("client.telephone")}
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -206,7 +228,7 @@ function FormulaireCoordonnees() {
             onChange={(e) => updateClient("email", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
-          {messageChamp("client[email]")}
+          {messageChamp("client.email")}
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -220,13 +242,18 @@ function FormulaireCoordonnees() {
           />
         </div>
 
-        <div className="md:col-span-2 border-t border-gray-100 pt-4">
-          {messageChamp("date_debut_location")}
-          {messageChamp("date_fin_location")}
-          {messageChamp("piece_identite_type")}
-          {messageChamp("piece_identite_photo")}
-          {messageChamp("type_evenement")}
-        </div>
+        {autresErreurs.length > 0 && (
+          <div className="md:col-span-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+            <p className="font-semibold mb-1">Merci de compléter :</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {autresErreurs.flatMap(([champ, valeur]) =>
+                [].concat(valeur).map((message, index) => (
+                  <li key={`${champ}-${index}`}>{message}</li>
+                )),
+              )}
+            </ul>
+          </div>
+        )}
 
         {erreur && (
           <p className="md:col-span-2 text-red-600 font-medium">{erreur}</p>

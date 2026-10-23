@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getCommande } from "../services/adminService";
+import { getCommande, updateCommande } from "../services/adminService";
 import DevisViewer from "./DevisViewer";
 
 const LIBELLES_STATUT = {
@@ -20,16 +20,99 @@ const LIBELLES_TYPE = {
   les_deux: "Location + Décoration",
 };
 
-function ListeDemandes({ commandes, onChangerStatut, chargement }) {
+const fcfa = (valeur) =>
+  `${Number(valeur || 0).toLocaleString("fr-FR")} FCFA`;
+
+const versDateInput = (valeur) => (valeur ? String(valeur).slice(0, 10) : "");
+
+const initialiserFormulaire = (commande) => ({
+  statut: commande.statut ?? "en_attente",
+  date_debut_location: versDateInput(commande.date_debut_location),
+  date_fin_location: versDateInput(commande.date_fin_location),
+  date_evenement: versDateInput(commande.date_evenement),
+  duree_decoration: commande.duree_decoration ?? "",
+  montant_decoration: commande.montant_decoration ?? "",
+});
+
+function ListeDemandes({ commandes, onChangerStatut, onRafraichir, chargement }) {
   const [detail, setDetail] = useState(null);
   const [chargementDetail, setChargementDetail] = useState(false);
+  const [formulaire, setFormulaire] = useState(null);
+  const [enregistrement, setEnregistrement] = useState(false);
+  const [erreurEdition, setErreurEdition] = useState(null);
+  const [messageEdition, setMessageEdition] = useState(null);
 
   const ouvrirDetail = async (id) => {
     setChargementDetail(true);
+    setErreurEdition(null);
+    setMessageEdition(null);
     try {
-      setDetail(await getCommande(id));
+      const commande = await getCommande(id);
+      setDetail(commande);
+      setFormulaire(initialiserFormulaire(commande));
     } finally {
       setChargementDetail(false);
+    }
+  };
+
+  const fermerDetail = () => {
+    setDetail(null);
+    setFormulaire(null);
+    setErreurEdition(null);
+    setMessageEdition(null);
+  };
+
+  const changerChamp = (champ, valeur) =>
+    setFormulaire((actuel) => ({ ...actuel, [champ]: valeur }));
+
+  const enregistrer = async () => {
+    if (!detail || !formulaire) return;
+
+    setEnregistrement(true);
+    setErreurEdition(null);
+    setMessageEdition(null);
+
+    const estLocation =
+      detail.type_prestation === "location" ||
+      detail.type_prestation === "les_deux";
+    const estDecoration =
+      detail.type_prestation === "decoration" ||
+      detail.type_prestation === "les_deux";
+
+    const donnees = { statut: formulaire.statut };
+
+    if (estLocation) {
+      donnees.date_debut_location = formulaire.date_debut_location || null;
+      donnees.date_fin_location = formulaire.date_fin_location || null;
+    }
+
+    if (estDecoration) {
+      donnees.date_evenement = formulaire.date_evenement || null;
+      donnees.duree_decoration =
+        formulaire.duree_decoration === ""
+          ? null
+          : Number(formulaire.duree_decoration);
+      donnees.montant_decoration =
+        formulaire.montant_decoration === ""
+          ? null
+          : Number(formulaire.montant_decoration);
+    }
+
+    try {
+      const reponse = await updateCommande(detail.id, donnees);
+      const commande = reponse.commande;
+      setDetail(commande);
+      setFormulaire(initialiserFormulaire(commande));
+      setMessageEdition("Commande mise à jour.");
+      onRafraichir?.();
+    } catch (error) {
+      const details = error.response?.data?.errors;
+      const premierMessage = details
+        ? Object.values(details).flat()[0]
+        : "Enregistrement impossible. Veuillez réessayer.";
+      setErreurEdition(premierMessage);
+    } finally {
+      setEnregistrement(false);
     }
   };
 
@@ -75,7 +158,7 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
                   {LIBELLES_TYPE[commande.type_prestation] ?? commande.type_prestation}
                 </td>
                 <td className="py-2 px-3 border border-gray-200">
-                  {Number(commande.montant_caution).toLocaleString("fr-FR")} FCFA
+                  {fcfa(commande.montant_caution)}
                 </td>
                 <td className="py-2 px-3 border border-gray-200">
                   <span
@@ -123,7 +206,7 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
 
       {(chargementDetail || detail) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-6">
             {chargementDetail ? (
               <p className="text-gray-500">Chargement du détail…</p>
             ) : (
@@ -134,7 +217,7 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setDetail(null)}
+                    onClick={fermerDetail}
                     className="text-gray-500 hover:text-gray-800"
                   >
                     Fermer
@@ -158,7 +241,7 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
 
                 {(detail.type_prestation === "location" ||
                   detail.type_prestation === "les_deux") && (
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <h4 className="font-semibold text-emerald-800">Matériel loué</h4>
                     {(detail.materiels ?? []).length === 0 && (
                       <p className="text-sm text-gray-500">Aucun matériel.</p>
@@ -166,30 +249,50 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
                     <ul className="text-sm text-gray-700 list-disc list-inside">
                       {(detail.materiels ?? []).map((m) => (
                         <li key={m.id}>
-                          {m.nom} × {m.pivot?.quantite}
+                          {m.nom} × {m.pivot?.quantite} —{" "}
+                          {fcfa(
+                            Number(m.prix_unitaire) * Number(m.pivot?.quantite),
+                          )}{" "}
+                          / jour
                         </li>
                       ))}
                     </ul>
                     {detail.date_debut_location && (
                       <p className="text-sm text-gray-600 mt-1">
-                        Du {detail.date_debut_location} au {detail.date_fin_location}
+                        Du {versDateInput(detail.date_debut_location)} au{" "}
+                        {versDateInput(detail.date_fin_location)}
                       </p>
                     )}
+                    <p className="text-sm text-gray-700 mt-1">
+                      <strong>Sous-total location :</strong>{" "}
+                      {fcfa(detail.montant_location)}
+                    </p>
                   </div>
                 )}
 
                 {(detail.type_prestation === "decoration" ||
                   detail.type_prestation === "les_deux") && (
-                  <div className="mb-3">
+                  <div className="mb-4">
                     <h4 className="font-semibold text-emerald-800">Décoration</h4>
                     <p className="text-sm text-gray-700">
-                      Événement : {detail.type_evenement || "—"} | Thème :{" "}
-                      {detail.theme || "—"} | Couleurs : {detail.couleurs || "—"}
+                      Événement : {detail.type_evenement || "—"}
+                      {detail.date_evenement && (
+                        <> — Date : {versDateInput(detail.date_evenement)}</>
+                      )}
+                      {detail.duree_decoration && (
+                        <> — Durée : {detail.duree_decoration} jour(s)</>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      Thème : {detail.theme || "—"} — Couleurs :{" "}
+                      {detail.couleurs || "—"} — Invités :{" "}
+                      {detail.nombre_personnes || "—"}
                     </p>
                     <ul className="text-sm text-gray-700 list-disc list-inside">
                       {(detail.prestations_decoration ?? []).map((p) => (
                         <li key={p.id}>
-                          {p.nom} × {p.pivot?.quantite}
+                          {p.nom} × {p.pivot?.quantite} —{" "}
+                          {fcfa(Number(p.prix) * Number(p.pivot?.quantite ?? 1))}
                         </li>
                       ))}
                     </ul>
@@ -198,6 +301,152 @@ function ListeDemandes({ commandes, onChangerStatut, chargement }) {
                         Éléments : {detail.elements_decor.map((e) => e.nom).join(", ")}
                       </p>
                     )}
+                    <p className="text-sm text-gray-700 mt-1">
+                      <strong>Décoration calculée :</strong>{" "}
+                      {fcfa(detail.montant_decoration_calcule)}
+                      {detail.montant_decoration !== null && (
+                        <>
+                          {" "}
+                          — <strong>Montant retenu :</strong>{" "}
+                          {fcfa(detail.montant_decoration_effectif)}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mb-4 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-sm text-gray-800">
+                  <p>
+                    <strong>Total général :</strong> {fcfa(detail.montant_total)}
+                  </p>
+                  <p>
+                    <strong>Caution :</strong> {fcfa(detail.montant_caution)}
+                  </p>
+                </div>
+
+                {formulaire && (
+                  <div className="mb-4 border border-gray-200 rounded-lg p-3">
+                    <h4 className="font-semibold text-emerald-800 mb-2">
+                      Modifier la commande
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <label className="block font-semibold text-gray-700 mb-1">
+                          Statut
+                        </label>
+                        <select
+                          value={formulaire.statut}
+                          onChange={(e) =>
+                            changerChamp("statut", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                        >
+                          <option value="en_attente">En attente</option>
+                          <option value="valide">Validée</option>
+                          <option value="refuse">Refusée</option>
+                        </select>
+                      </div>
+
+                      {(detail.type_prestation === "location" ||
+                        detail.type_prestation === "les_deux") && (
+                        <>
+                          <div>
+                            <label className="block font-semibold text-gray-700 mb-1">
+                              Début de location
+                            </label>
+                            <input
+                              type="date"
+                              value={formulaire.date_debut_location}
+                              onChange={(e) =>
+                                changerChamp("date_debut_location", e.target.value)
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-gray-700 mb-1">
+                              Fin de location
+                            </label>
+                            <input
+                              type="date"
+                              value={formulaire.date_fin_location}
+                              onChange={(e) =>
+                                changerChamp("date_fin_location", e.target.value)
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {(detail.type_prestation === "decoration" ||
+                        detail.type_prestation === "les_deux") && (
+                        <>
+                          <div>
+                            <label className="block font-semibold text-gray-700 mb-1">
+                              Date de l'événement
+                            </label>
+                            <input
+                              type="date"
+                              value={formulaire.date_evenement}
+                              onChange={(e) =>
+                                changerChamp("date_evenement", e.target.value)
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-gray-700 mb-1">
+                              Durée (jours)
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={formulaire.duree_decoration}
+                              onChange={(e) =>
+                                changerChamp("duree_decoration", e.target.value)
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-semibold text-gray-700 mb-1">
+                              Montant décoration (FCFA)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="Laisser vide = calcul automatique"
+                              value={formulaire.montant_decoration}
+                              onChange={(e) =>
+                                changerChamp("montant_decoration", e.target.value)
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      <button
+                        type="button"
+                        onClick={enregistrer}
+                        disabled={enregistrement}
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-1.5 rounded-lg disabled:opacity-60"
+                      >
+                        {enregistrement ? "Enregistrement…" : "Enregistrer"}
+                      </button>
+                      {messageEdition && (
+                        <span className="text-emerald-700 text-sm">
+                          {messageEdition}
+                        </span>
+                      )}
+                      {erreurEdition && (
+                        <span className="text-red-600 text-sm">{erreurEdition}</span>
+                      )}
+                    </div>
                   </div>
                 )}
 
