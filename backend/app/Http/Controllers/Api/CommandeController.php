@@ -37,10 +37,17 @@ class CommandeController extends Controller
             // existante pour regrouper les commandes d'une même personne.
             $client = Client::where('telephone', $donnees['client']['telephone'])->first();
 
+            $clientData = [
+                'nom' => $donnees['client']['nom'],
+                'telephone' => $donnees['client']['telephone'],
+                'email' => $donnees['client']['email'] ?? null,
+                'adresse' => $donnees['client']['adresse'] ?? null,
+            ];
+
             if ($client) {
-                $client->update($donnees['client']);
+                $client->update($clientData);
             } else {
-                $client = Client::create($donnees['client']);
+                $client = Client::create($clientData);
             }
 
             // Stockage optionnel de la pièce d'identité (location).

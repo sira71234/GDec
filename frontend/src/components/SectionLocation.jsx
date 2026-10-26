@@ -12,9 +12,12 @@ const TYPES_PIECE = [
   { valeur: "Autre", libelle: "Autre pièce" },
 ];
 
+const dateDuJour = () => new Date().toLocaleDateString("en-CA");
+
 function SectionLocation() {
   const {
     addMateriel,
+    updateQuantiteMateriel,
     removeMateriel,
     materiels: panierMateriels,
     location,
@@ -59,6 +62,15 @@ function SectionLocation() {
     }
   };
 
+  const aujourdHui = dateDuJour();
+
+  const changerDateDebut = (valeur) => {
+    updateLocation("date_debut_location", valeur);
+    if (valeur && location.date_fin_location && location.date_fin_location < valeur) {
+      updateLocation("date_fin_location", valeur);
+    }
+  };
+
   const quantiteDansPanier = (id) =>
     panierMateriels.find((item) => item.id === id)?.quantite ?? 0;
 
@@ -80,7 +92,8 @@ function SectionLocation() {
           <input
             type="date"
             value={location.date_debut_location}
-            onChange={(e) => updateLocation("date_debut_location", e.target.value)}
+            min={aujourdHui}
+            onChange={(e) => changerDateDebut(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
         </div>
@@ -91,6 +104,7 @@ function SectionLocation() {
           <input
             type="date"
             value={location.date_fin_location}
+            min={location.date_debut_location || aujourdHui}
             onChange={(e) => updateLocation("date_fin_location", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
@@ -151,28 +165,16 @@ function SectionLocation() {
         {chargement && <p className="text-gray-500">Chargement du matériel…</p>}
         {erreur && <p className="text-red-600">{erreur}</p>}
         {materiels.map((materiel) => (
-          <div key={materiel.id} className="relative">
-            <ArticleCard
-              article={materiel}
-              prix={materiel.prix_unitaire}
-              onAdd={(quantite) => addMateriel(materiel, quantite)}
-              selected={quantiteDansPanier(materiel.id) > 0}
-            />
-            {quantiteDansPanier(materiel.id) > 0 && (
-              <>
-                <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
-                  {quantiteDansPanier(materiel.id)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeMateriel(materiel.id)}
-                  className="mt-1 w-full text-xs font-semibold text-red-600 hover:underline"
-                >
-                  Annuler l'ajout
-                </button>
-              </>
-            )}
-          </div>
+          <ArticleCard
+            key={materiel.id}
+            article={materiel}
+            prix={materiel.prix_unitaire}
+            quantite={quantiteDansPanier(materiel.id)}
+            max={materiel.quantite_stock}
+            onAdd={(quantite) => addMateriel(materiel, quantite)}
+            onModifier={(quantite) => updateQuantiteMateriel(materiel.id, quantite)}
+            onRetirer={() => removeMateriel(materiel.id)}
+          />
         ))}
       </div>
     </section>

@@ -73,6 +73,8 @@ function FormulaireCoordonnees() {
 
   const valider = () => {
     const erreurs = {};
+    const aujourdHui = new Date().toLocaleDateString("en-CA");
+
     if (!client.nom.trim()) erreurs["client.nom"] = "Le nom est obligatoire.";
     if (!client.telephone.trim()) {
       erreurs["client.telephone"] = "Le numéro de téléphone est obligatoire.";
@@ -83,9 +85,13 @@ function FormulaireCoordonnees() {
     if (typePrestation === "location" || typePrestation === "les_deux") {
       if (!location.date_debut_location) {
         erreurs["date_debut_location"] = "La date de début de location est obligatoire.";
+      } else if (location.date_debut_location < aujourdHui) {
+        erreurs["date_debut_location"] = "La date de début de location ne peut pas être antérieure à aujourd'hui.";
       }
       if (!location.date_fin_location) {
         erreurs["date_fin_location"] = "La date de fin de location est obligatoire.";
+      } else if (location.date_fin_location < (location.date_debut_location || aujourdHui)) {
+        erreurs["date_fin_location"] = "La date de fin de location doit être égale ou postérieure à la date de début.";
       }
       if (!location.piece_identite_type) {
         erreurs["piece_identite_type"] = "Le type de pièce d'identité est obligatoire.";
@@ -100,6 +106,8 @@ function FormulaireCoordonnees() {
       }
       if (!decoration.date_evenement) {
         erreurs["date_evenement"] = "La date de l'événement est obligatoire.";
+      } else if (decoration.date_evenement < aujourdHui) {
+        erreurs["date_evenement"] = "La date de l'événement ne peut pas être antérieure à aujourd'hui.";
       }
       if (!decoration.duree_decoration || Number(decoration.duree_decoration) < 1) {
         erreurs["duree_decoration"] = "La durée de la décoration doit être d'au moins un jour.";

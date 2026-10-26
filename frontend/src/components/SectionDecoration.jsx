@@ -19,6 +19,7 @@ const TYPES_EVENEMENT = [
 function SectionDecoration() {
   const {
     addPrestation,
+    updateQuantitePrestation,
     removePrestation,
     prestations: panierPrestations,
     elements,
@@ -45,6 +46,8 @@ function SectionDecoration() {
 
   const quantiteDansPanier = (id) =>
     panierPrestations.find((item) => item.id === id)?.quantite ?? 0;
+
+  const aujourdHui = new Date().toLocaleDateString("en-CA");
 
   return (
     <section className="bg-emerald-50 py-8 border-t-4 border-emerald-700">
@@ -93,6 +96,7 @@ function SectionDecoration() {
           <input
             type="date"
             value={decoration.date_evenement}
+            min={aujourdHui}
             onChange={(e) => updateDecoration("date_evenement", e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
@@ -182,28 +186,17 @@ function SectionDecoration() {
         {chargement && <p className="text-gray-500">Chargement des prestations…</p>}
         {erreur && <p className="text-red-600">{erreur}</p>}
         {prestations.map((prestation) => (
-          <div key={prestation.id} className="relative">
-            <ArticleCard
-              article={prestation}
-              prix={prestation.prix}
-              onAdd={(quantite) => addPrestation(prestation, quantite)}
-              selected={quantiteDansPanier(prestation.id) > 0}
-            />
-            {quantiteDansPanier(prestation.id) > 0 && (
-              <>
-                <span className="absolute -top-2 -right-2 bg-emerald-700 text-white text-xs font-bold rounded-full h-6 min-w-6 px-2 flex items-center justify-center">
-                  {quantiteDansPanier(prestation.id)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removePrestation(prestation.id)}
-                  className="mt-1 w-full text-xs font-semibold text-red-600 hover:underline"
-                >
-                  Annuler l'ajout
-                </button>
-              </>
-            )}
-          </div>
+          <ArticleCard
+            key={prestation.id}
+            article={prestation}
+            prix={prestation.prix}
+            quantite={quantiteDansPanier(prestation.id)}
+            onAdd={(quantite) => addPrestation(prestation, quantite)}
+            onModifier={(quantite) =>
+              updateQuantitePrestation(prestation.id, quantite)
+            }
+            onRetirer={() => removePrestation(prestation.id)}
+          />
         ))}
       </div>
     </section>

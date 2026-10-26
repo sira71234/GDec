@@ -26,24 +26,42 @@ export function PanierProvider({ children }) {
   const [location, setLocation] = useState(LOCATION_VIDE);
   const [decoration, setDecoration] = useState(DECORATION_VIDE);
 
+  const bornerQuantite = (quantite, maximum) => {
+    const minimum = 1;
+    const nombre = Number(quantite);
+    if (Number.isNaN(nombre)) return minimum;
+    const plafond =
+      maximum === undefined || maximum === null ? Infinity : Number(maximum);
+    return Math.max(minimum, Math.min(nombre, plafond));
+  };
+
   const addMateriel = (article, quantite = 1) => {
+    const stock = article.quantite_stock;
+    if (stock !== undefined && stock !== null && Number(stock) <= 0) {
+      return;
+    }
+    const quantiteBornee = bornerQuantite(quantite, stock);
+
     setMateriels((precedent) => {
       const existant = precedent.find((item) => item.id === article.id);
       if (existant) {
         return precedent.map((item) =>
           item.id === article.id
-            ? { ...item, quantite: item.quantite + quantite }
+            ? { ...item, quantite: quantiteBornee }
             : item,
         );
       }
-      return [...precedent, { ...article, quantite }];
+      return [...precedent, { ...article, quantite: quantiteBornee }];
     });
   };
 
   const updateQuantiteMateriel = (id, quantite) => {
-    const q = Math.max(1, Number(quantite) || 1);
     setMateriels((precedent) =>
-      precedent.map((item) => (item.id === id ? { ...item, quantite: q } : item)),
+      precedent.map((item) =>
+        item.id === id
+          ? { ...item, quantite: bornerQuantite(quantite, item.quantite_stock) }
+          : item,
+      ),
     );
   };
 
@@ -51,23 +69,26 @@ export function PanierProvider({ children }) {
     setMateriels((precedent) => precedent.filter((item) => item.id !== id));
 
   const addPrestation = (prestation, quantite = 1) => {
+    const quantiteBornee = bornerQuantite(quantite);
     setPrestations((precedent) => {
       const existant = precedent.find((item) => item.id === prestation.id);
       if (existant) {
         return precedent.map((item) =>
           item.id === prestation.id
-            ? { ...item, quantite: item.quantite + quantite }
+            ? { ...item, quantite: quantiteBornee }
             : item,
         );
       }
-      return [...precedent, { ...prestation, quantite }];
+      return [...precedent, { ...prestation, quantite: quantiteBornee }];
     });
   };
 
   const updateQuantitePrestation = (id, quantite) => {
-    const q = Math.max(1, Number(quantite) || 1);
+    const quantiteBornee = bornerQuantite(quantite);
     setPrestations((precedent) =>
-      precedent.map((item) => (item.id === id ? { ...item, quantite: q } : item)),
+      precedent.map((item) =>
+        item.id === id ? { ...item, quantite: quantiteBornee } : item,
+      ),
     );
   };
 

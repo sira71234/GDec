@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Materiel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreCommandeRequest extends FormRequest
 {
@@ -73,6 +75,60 @@ class StoreCommandeRequest extends FormRequest
             // Éléments à décorer sélectionnés.
             'elements_decor' => ['nullable', 'array'],
             'elements_decor.*' => ['integer', 'exists:elements_decor,id'],
+        ];
+    }
+
+    /**
+     * Validations complémentaires après les règles principales.
+     *
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->isNotEmpty()) {
+                    return;
+                }
+
+                $materiels = $this->input('materiels', []);
+                if (! is_array($materiels)) {
+                    return;
+                }
+
+                $demandes = [];
+                foreach ($materiels as $ligne) {
+                    if (! is_array($ligne)) {
+                        continue;
+                    }
+                    $id = $ligne['id'] ?? null;
+                    $quantite = isset($ligne['quantite']) ? (int) $ligne['quantite'] : 0;
+                    if ($id && $quantite > 0) {
+                        $demandes[$id] = ($demandes[$id] ?? 0) + $quantite;
+                    }
+                }
+
+                if (empty($demandes)) {
+                    return;
+                }
+
+                $stocks = Materiel::whereIn('id', array_keys($demandes))
+                    ->pluck('quantite_stock', 'id');
+
+                foreach ($demandes as $id => $total) {
+                    $stock = $stocks->get($id);
+                    if ($stock === null) {
+                        continue;
+                    }
+                    if ($total > (int) $stock) {
+                        $validator->errors()->add(
+                            'materiels',
+                            "La quantité demandée pour un des articles dépasse le stock disponible ({$stock}).",
+                        );
+                        break;
+                    }
+                }
+            },
         ];
     }
 
