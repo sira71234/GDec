@@ -33,22 +33,17 @@ class CommandeController extends Controller
         $donnees = $request->validated();
 
         $commande = DB::transaction(function () use ($request, $donnees, $cautionCalculator): Commande {
-            // Le téléphone est l'identifiant du client : on réutilise la fiche
-            // existante pour regrouper les commandes d'une même personne.
-            $client = Client::where('telephone', $donnees['client']['telephone'])->first();
-
-            $clientData = [
+            // Le téléphone identifie la fiche client et permet de la réutiliser.
+            $clientData = array_filter([
                 'nom' => $donnees['client']['nom'],
-                'telephone' => $donnees['client']['telephone'],
                 'email' => $donnees['client']['email'] ?? null,
-                'adresse' => $donnees['client']['adresse'] ?? null,
-            ];
+                'adresse' => $donnees['client']['adresse'],
+            ], fn ($valeur) => $valeur !== null && $valeur !== '');
 
-            if ($client) {
-                $client->update($clientData);
-            } else {
-                $client = Client::create($clientData);
-            }
+            $client = Client::updateOrCreate(
+                ['telephone' => $donnees['client']['telephone']],
+                $clientData,
+            );
 
             // Stockage optionnel de la pièce d'identité (location).
             $pieceIdentitePhoto = null;

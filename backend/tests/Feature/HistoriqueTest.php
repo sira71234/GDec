@@ -34,6 +34,7 @@ class HistoriqueTest extends TestCase
             'client' => [
                 'nom' => 'Kossi',
                 'telephone' => '0700000000',
+                'adresse' => 'Cotonou',
             ],
             'type_evenement' => 'Mariage',
             'date_evenement' => now()->addDays(10)->toDateString(),

@@ -29,9 +29,7 @@ function FormulaireCoordonnees() {
     if (client.email) {
       data.append("client[email]", client.email);
     }
-    if (client.adresse) {
-      data.append("client[adresse]", client.adresse);
-    }
+    data.append("client[adresse]", client.adresse);
 
     if (typePrestation === "location" || typePrestation === "les_deux") {
       data.append("date_debut_location", location.date_debut_location);
@@ -78,6 +76,9 @@ function FormulaireCoordonnees() {
     if (!client.nom.trim()) erreurs["client.nom"] = "Le nom est obligatoire.";
     if (!client.telephone.trim()) {
       erreurs["client.telephone"] = "Le numéro de téléphone est obligatoire.";
+    }
+    if (!client.adresse.trim()) {
+      erreurs["client.adresse"] = "L’adresse est obligatoire.";
     }
     if (client.email && !/^\S+@\S+\.\S+$/.test(client.email)) {
       erreurs["client.email"] = "L'adresse email est invalide.";
@@ -163,7 +164,7 @@ function FormulaireCoordonnees() {
 
   // Les erreurs hors coordonnées (dates, pièce, décoration) sont regroupées
   // dans un encart pour rester visibles même plus bas dans la page.
-  const champsClient = ["client.nom", "client.telephone", "client.email"];
+  const champsClient = ["client.nom", "client.telephone", "client.email", "client.adresse"];
   const autresErreurs = Object.entries(erreursApi).filter(
     ([champ]) => !champsClient.includes(champ),
   );
@@ -210,6 +211,7 @@ function FormulaireCoordonnees() {
             type="text"
             value={client.nom}
             onChange={(e) => updateClient("nom", e.target.value)}
+            required
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
           {messageChamp("client.nom")}
@@ -222,6 +224,7 @@ function FormulaireCoordonnees() {
             type="text"
             value={client.telephone}
             onChange={(e) => updateClient("telephone", e.target.value)}
+            required
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
           {messageChamp("client.telephone")}
@@ -240,14 +243,16 @@ function FormulaireCoordonnees() {
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Adresse
+            Adresse *
           </label>
           <input
             type="text"
             value={client.adresse}
             onChange={(e) => updateClient("adresse", e.target.value)}
+            required
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
           />
+          {messageChamp("client.adresse")}
         </div>
 
         {autresErreurs.length > 0 && (

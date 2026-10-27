@@ -83,6 +83,7 @@ class CommandeStoreTest extends TestCase
             'client' => [
                 'nom' => 'Kossi',
                 'telephone' => '0700000000',
+                'adresse' => 'Cotonou',
             ],
             'type_evenement' => 'Mariage',
             'date_evenement' => now()->addDays(10)->toDateString(),
@@ -162,13 +163,13 @@ class CommandeStoreTest extends TestCase
         $response->assertJsonValidationErrors(['date_evenement', 'duree_decoration']);
     }
 
-    public function test_le_telephone_identifie_le_client_et_regroupe_ses_commandes()
+    public function test_le_telephone_identifie_le_client_et_regroupe_ses_commandes_avec_les_memes_coordonnees()
     {
         $materiel = Materiel::factory()->create(['prix_unitaire' => 1000]);
 
-        $payload = fn (string $nom) => [
+        $payload = [
             'type_prestation' => 'location',
-            'client' => ['nom' => $nom, 'telephone' => '0199999999'],
+            'client' => ['nom' => 'Même client', 'telephone' => '0199999999', 'adresse' => 'Cotonou'],
             'date_debut_location' => now()->addDays(5)->toDateString(),
             'date_fin_location' => now()->addDays(6)->toDateString(),
             'piece_identite_type' => 'CNI',
@@ -176,12 +177,12 @@ class CommandeStoreTest extends TestCase
             'materiels' => [['id' => $materiel->id, 'quantite' => 1]],
         ];
 
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload('Premier nom'))->assertCreated();
-        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload('Nom mis à jour'))->assertCreated();
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload)->assertCreated();
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', $payload)->assertCreated();
 
-        // Une seule fiche client pour ce numéro, avec le nom le plus récent.
+        // Une seule fiche client est réutilisée pour les deux commandes.
         $this->assertDatabaseCount('clients', 1);
-        $this->assertDatabaseHas('clients', ['telephone' => '0199999999', 'nom' => 'Nom mis à jour']);
+        $this->assertDatabaseHas('clients', ['telephone' => '0199999999', 'nom' => 'Même client']);
         $this->assertDatabaseCount('commandes', 2);
     }
 }

@@ -45,7 +45,7 @@ class StoreCommandeRequest extends FormRequest
             'client.nom' => ['required', 'string', 'max:255'],
             'client.telephone' => ['required', 'string', 'max:50'],
             'client.email' => ['nullable', 'email', 'max:255'],
-            'client.adresse' => ['nullable', 'string', 'max:255'],
+            'client.adresse' => ['required', 'string', 'max:255'],
 
             // Location : dates + pièce d'identité obligatoires.
             'date_debut_location' => [Rule::requiredIf($besoinLocation), 'nullable', 'date', 'after_or_equal:today'],
@@ -144,6 +144,7 @@ class StoreCommandeRequest extends FormRequest
             'client.required' => 'Les coordonnées du client sont obligatoires.',
             'client.nom.required' => 'Le nom du client est obligatoire.',
             'client.telephone.required' => 'Le téléphone du client est obligatoire.',
+            'client.adresse.required' => 'L’adresse du client est obligatoire.',
             'date_debut_location.required_if' => 'La date de début de location est obligatoire.',
             'date_fin_location.required_if' => 'La date de fin de location est obligatoire.',
             'date_fin_location.after_or_equal' => 'La date de fin doit être postérieure ou égale à la date de début.',
