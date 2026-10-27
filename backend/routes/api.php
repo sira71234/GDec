@@ -27,7 +27,8 @@ Route::prefix('catalogue')->group(function () {
 });
 
 // Dépôt d'une commande par le client (public).
-Route::post('/commandes', [CommandeController::class, 'store']);
+Route::post('/commandes', [CommandeController::class, 'store'])
+    ->middleware('throttle:10,1');
 
 // Contenu public de la vitrine (page d'accueil).
 Route::get('/vitrine', [VitrineController::class, 'index']);
@@ -36,7 +37,8 @@ Route::get('/vitrine', [VitrineController::class, 'index']);
 Route::get('/disponibilites/verifier', [DisponibiliteController::class, 'verifier']);
 
 // Connexion administrateur (identifiant + mot de passe + code admin).
-Route::post('/admin/login', [AdminAuthController::class, 'login']);
+Route::post('/admin/login', [AdminAuthController::class, 'login'])
+    ->middleware('throttle:5,1');
 
 // Routes protégées par jeton Sanctum (espace administrateur).
 Route::middleware('auth:sanctum')->group(function () {
