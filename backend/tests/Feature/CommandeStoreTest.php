@@ -22,6 +22,7 @@ class CommandeStoreTest extends TestCase
         parent::setUp();
 
         Storage::fake('public');
+        Storage::fake('local');
         Mail::fake();
     }
 
