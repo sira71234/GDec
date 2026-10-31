@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Models\Commande;
 use App\Services\CautionCalculatorService;
@@ -270,5 +271,18 @@ class AdminCommandeController extends Controller
         );
 
         return response()->json(['message' => 'Commande supprimée définitivement']);
+    }
+
+        public function pieceIdentite(Commande $commande)
+    {
+        $chemin = $commande->piece_identite_photo;
+
+        abort_unless(
+            $chemin && Storage::disk('local')->exists($chemin),
+            404,
+            "Aucune pièce d'identité pour cette commande."
+        );
+
+        return Storage::disk('local')->response($chemin);
     }
 }
