@@ -48,7 +48,7 @@ class CommandeController extends Controller
             // Stockage optionnel de la pièce d'identité (location).
             $pieceIdentitePhoto = null;
             if ($request->hasFile('piece_identite_photo')) {
-                $pieceIdentitePhoto = $request->file('piece_identite_photo')->store('pieces_identite', 'public');
+                $pieceIdentitePhoto = $request->file('piece_identite_photo')->store('pieces_identite', 'local');
             }
 
             $commande = $client->commandes()->create([
