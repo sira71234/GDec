@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ElementDecorFactory extends Factory
 {
-    protected $model = \App\Models\ElementDecor::class;
-    
+    protected $model = ElementDecor::class;
+
     public function definition(): array
     {
         return [

@@ -20,7 +20,7 @@ class DevisTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake('local');
     }
 
     public function test_ladmin_peut_generer_un_devis_pour_une_commande()
@@ -38,7 +38,7 @@ class DevisTest extends TestCase
 
         $devis = Devis::first();
         $this->assertEquals($commande->id, $devis->commande_id);
-        Storage::disk('public')->assertExists($devis->fichier_pdf);
+        Storage::disk('local')->assertExists($devis->fichier_pdf);
     }
 
     public function test_un_devis_est_toujours_rattache_a_sa_commande()

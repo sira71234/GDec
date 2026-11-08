@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/commandes/historique', [AdminCommandeController::class, 'historique']);
         Route::get('/commandes/corbeille', [AdminCommandeController::class, 'corbeille']);
         Route::get('/commandes/{commande}', [AdminCommandeController::class, 'show']);
+        Route::get('/commandes/{commande}/piece-identite', [AdminCommandeController::class, 'pieceIdentite']);
         Route::match(['put', 'patch', 'post'], '/commandes/{commande}', [AdminCommandeController::class, 'update']);
         Route::patch('/commandes/{commande}/statut', [AdminCommandeController::class, 'updateStatut']);
         Route::patch('/commandes/{id}/restaurer', [AdminCommandeController::class, 'restaurer']);

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Admin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class AdminAuthTest extends TestCase
@@ -96,5 +97,43 @@ class AdminAuthTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_les_tentatives_de_connexion_sont_journalisees_sans_secrets()
+    {
+        Log::spy();
+
+        Admin::factory()->create([
+            'identifiant' => 'boss',
+            'mot_de_passe' => 'secret123',
+            'code_admin' => '654321',
+        ]);
+
+        $this->postJson('/api/admin/login', [
+            'identifiant' => 'boss',
+            'mot_de_passe' => 'secret123',
+            'code_admin' => '654321',
+        ])->assertOk();
+
+        $this->postJson('/api/admin/login', [
+            'identifiant' => 'boss',
+            'mot_de_passe' => 'mauvais',
+            'code_admin' => '654321',
+        ])->assertStatus(401);
+
+        Log::shouldHaveReceived('info')->withArgs(function (string $message, array $contexte = []) {
+            return $message === 'Tentative de connexion admin reçue.'
+                && $contexte['identifiant'] === 'boss'
+                && ! array_key_exists('mot_de_passe', $contexte)
+                && ! array_key_exists('code_admin', $contexte);
+        });
+
+        Log::shouldHaveReceived('warning')->withArgs(function (string $message, array $contexte = []) {
+            return $message === 'Connexion admin refusée.'
+                && $contexte['identifiant'] === 'boss'
+                && $contexte['compte_trouve'] === true
+                && ! array_key_exists('mot_de_passe', $contexte)
+                && ! array_key_exists('code_admin', $contexte);
+        });
     }
 }

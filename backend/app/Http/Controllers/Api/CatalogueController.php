@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ElementDecor;
 use App\Models\Materiel;
 use App\Models\PrestationDecoration;
-use App\Models\ElementDecor;
 
 class CatalogueController extends Controller
 {

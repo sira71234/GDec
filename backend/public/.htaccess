@@ -18,8 +18,71 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Front Controller...
+    # Documents clients : jamais accessibles directement (même si d'anciens
+    # fichiers subsistent dans public/storage sur l'hébergement).
+    RewriteRule ^storage/(pieces_identite|devis)(/|$) - [F,L]
+
+    # API Laravel.
+    RewriteCond %{REQUEST_URI} ^/api
+    RewriteRule ^ index.php [L]
+
+    # Application React (uniquement si le build est présent dans public/).
+    RewriteCond %{DOCUMENT_ROOT}/public/index.html -f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.html [L]
+
+    # Repli Laravel (installation sans build React).
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.html index.php
+</IfModule>
+
+# --- Sécurité : ne jamais servir les fichiers sensibles ---
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "(?i)^(composer\.(json|lock)|artisan|phpunit\.xml(\.dist)?|README\.md|AGENTS\.md|.*\.(log|sql|bak|ini|sh|md))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# --- Cache navigateur des assets (réduit les hits sur l'hébergement) ---
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType image/gif "access plus 30 days"
+    ExpiresByType image/svg+xml "access plus 30 days"
+    ExpiresByType font/woff "access plus 30 days"
+    ExpiresByType font/woff2 "access plus 30 days"
+    ExpiresByType text/css "access plus 30 days"
+    ExpiresByType application/javascript "access plus 30 days"
+    ExpiresByType text/javascript "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpg|jpeg|png|webp|gif|svg|woff2?|css|js)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(html|json)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
 </IfModule>

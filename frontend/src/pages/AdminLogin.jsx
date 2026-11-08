@@ -20,15 +20,46 @@ function AdminLogin() {
     setEnvoi(true);
     try {
       await login(identifiant, motDePasse, codeAdmin);
+
+      // Ceinture et bretelles : on ne quitte l'écran de connexion que si la
+      // session est réellement utilisable par le tableau de bord.
+      if (!isAuthenticated()) {
+        setErreur(
+          "La connexion a répondu mais la session n'a pas pu être enregistrée. " +
+            "Vérifiez que votre navigateur autorise le stockage du site.",
+        );
+        return;
+      }
+
       navigate("/admin/dashboard", { replace: true });
     } catch (error) {
       const statut = error.response?.status;
       const message = error.response?.data?.message;
-      setErreur(
-        statut === 401 || statut === 422
-          ? message || "Connexion refusée. Vérifiez vos identifiants et le code admin."
-          : "Connexion impossible. Veuillez réessayer.",
-      );
+
+      if (error.code === "REPONSE_INVALIDE") {
+        setErreur(
+          `${error.message} Le serveur a probablement renvoyé une page HTML ` +
+            "(configuration ou hébergement) au lieu de l'API.",
+        );
+      } else if (error.code === "ECONNABORTED") {
+        setErreur(
+          "Le serveur n'a pas répondu à temps. Vérifiez votre connexion puis réessayez.",
+        );
+      } else if (!error.response) {
+        setErreur(
+          "Impossible de joindre le serveur. Vérifiez votre connexion internet.",
+        );
+      } else if (statut === 401 || statut === 422) {
+        setErreur(
+          message || "Connexion refusée. Vérifiez vos identifiants et le code admin.",
+        );
+      } else if (statut === 429) {
+        setErreur("Trop de tentatives. Patientez une minute avant de réessayer.");
+      } else {
+        setErreur(
+          `Connexion impossible (erreur serveur ${statut ?? "inconnue"}). Veuillez réessayer.`,
+        );
+      }
     } finally {
       setEnvoi(false);
     }

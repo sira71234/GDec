@@ -71,7 +71,7 @@ function ArticleCard({
 
   return (
     <div
-      className={`flex flex-col gap-3 p-4 border-2 rounded-xl bg-white shadow-sm transition hover:shadow-md ${
+      className={`flex min-w-0 flex-col gap-3 p-4 border-2 rounded-xl bg-white shadow-sm transition hover:shadow-md ${
         enPanier ? "border-emerald-600" : "border-gray-200"
       }`}
     >
@@ -101,7 +101,7 @@ function ArticleCard({
       )}
 
       <div className="flex flex-col gap-1 grow">
-        <h3 className="font-semibold text-gray-800">{article.nom}</h3>
+        <h3 className="break-words font-semibold text-gray-800">{article.nom}</h3>
         {article.description && (
           <p className="text-sm text-gray-500 line-clamp-2">{article.description}</p>
         )}
@@ -122,9 +122,9 @@ function ArticleCard({
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
-            className={`w-20 border rounded-md px-2 py-1 text-center ${
+            className={`w-16 shrink-0 border rounded-md px-2 py-1 text-center sm:w-20 ${
               champDesactive
                 ? "border-gray-200 bg-gray-100 text-gray-600"
                 : "border-gray-300"
@@ -138,19 +138,19 @@ function ArticleCard({
             aria-label={`Quantité de ${article.nom}`}
           />
           {enPanier ? (
-            <div className="flex grow gap-2">
+            <div className="flex min-w-0 grow gap-2">
               <button
                 type="button"
                 onClick={() => setEdition(true)}
                 disabled={edition}
-                className="grow bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-3 py-2 rounded-lg transition disabled:opacity-60"
+                className="min-w-0 grow whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-2 py-2 rounded-lg transition disabled:opacity-60 sm:text-sm sm:px-3"
               >
                 Modifier
               </button>
               <button
                 type="button"
                 onClick={retirer}
-                className="grow bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold px-3 py-2 rounded-lg transition"
+                className="min-w-0 grow whitespace-nowrap bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold px-2 py-2 rounded-lg transition sm:text-sm sm:px-3"
               >
                 Annuler
               </button>
@@ -160,7 +160,7 @@ function ArticleCard({
               type="button"
               onClick={ajouter}
               disabled={rupture}
-              className="grow bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-3 py-2 rounded-lg transition disabled:opacity-60"
+              className="min-w-0 grow whitespace-nowrap bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-2 py-2 rounded-lg transition disabled:opacity-60 sm:text-sm sm:px-3"
             >
               Ajouter
             </button>

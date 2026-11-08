@@ -35,5 +35,4 @@ class Materiel extends Model
             ->withPivot('quantite')
             ->withTimestamps();
     }
-
 }

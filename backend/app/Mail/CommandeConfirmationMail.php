@@ -21,6 +21,7 @@ class CommandeConfirmationMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public Commande $commande;
+
     public string $cheminPdf;
 
     public function __construct(Commande $commande, string $cheminPdf)
@@ -32,7 +33,7 @@ class CommandeConfirmationMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmation de votre commande n°' . $this->commande->id,
+            subject: 'Confirmation de votre commande n°'.$this->commande->id,
         );
     }
 
@@ -46,13 +47,13 @@ class CommandeConfirmationMail extends Mailable implements ShouldQueue
 
     public function attachments(): array
     {
-        if (!Storage::disk('public')->exists($this->cheminPdf)) {
+        if (! Storage::disk('local')->exists($this->cheminPdf)) {
             return [];
         }
 
         return [
-            Attachment::fromPath(Storage::disk('public')->path($this->cheminPdf))
-                ->as('recapitulatif_commande_' . $this->commande->id . '.pdf')
+            Attachment::fromPath(Storage::disk('local')->path($this->cheminPdf))
+                ->as('recapitulatif_commande_'.$this->commande->id.'.pdf')
                 ->withMime('application/pdf'),
         ];
     }

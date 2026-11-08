@@ -9,6 +9,7 @@ use App\Services\HistoriqueService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class AdminCommandeController extends Controller
@@ -112,6 +113,34 @@ class AdminCommandeController extends Controller
 
         // Retour JSON de la commande complète avec ses relations imbriquées
         return response()->json($this->avecTotaux($commande), 200);
+    }
+
+    /**
+     * Télécharge la pièce d'identité d'une commande (disque privé).
+     *
+     * GET /api/admin/commandes/{commande}/piece-identite
+     */
+    public function pieceIdentite(Commande $commande)
+    {
+        $chemin = $commande->piece_identite_photo;
+
+        // Rétrocompatibilité avec les fichiers déjà déposés sur le disque public.
+        $disque = $chemin && Storage::disk('local')->exists($chemin)
+            ? 'local'
+            : 'public';
+
+        abort_unless(
+            $chemin && Storage::disk($disque)->exists($chemin),
+            404,
+            "Pièce d'identité introuvable.",
+        );
+
+        $extension = pathinfo($chemin, PATHINFO_EXTENSION) ?: 'jpg';
+
+        return Storage::disk($disque)->download(
+            $chemin,
+            "piece_identite_commande_{$commande->id}.{$extension}",
+        );
     }
 
     /**

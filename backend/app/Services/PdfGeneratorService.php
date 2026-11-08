@@ -32,12 +32,12 @@ class PdfGeneratorService
         $nomFichier = 'devis/commande_'.$commande->id.'_'.Str::random(8).'.pdf';
 
         // SÉCURITÉ : Crée automatiquement le dossier "devis" s'il n'existe pas encore
-        if (! Storage::disk('public')->exists('devis')) {
-            Storage::disk('public')->makeDirectory('devis');
+        if (! Storage::disk('local')->exists('devis')) {
+            Storage::disk('local')->makeDirectory('devis');
         }
 
-        // Sauvegarde propre via l'API de Laravel sur le disque public
-        Storage::disk('public')->put($nomFichier, $pdf->output());
+        // Sauvegarde propre via l'API de Laravel sur le disque privé
+        Storage::disk('local')->put($nomFichier, $pdf->output());
 
         return $nomFichier;
     }
@@ -57,11 +57,11 @@ class PdfGeneratorService
 
         $nomFichier = 'devis/devis_commande_'.$commande->id.'_'.Str::random(8).'.pdf';
 
-        if (! Storage::disk('public')->exists('devis')) {
-            Storage::disk('public')->makeDirectory('devis');
+        if (! Storage::disk('local')->exists('devis')) {
+            Storage::disk('local')->makeDirectory('devis');
         }
 
-        Storage::disk('public')->put($nomFichier, $pdf->output());
+        Storage::disk('local')->put($nomFichier, $pdf->output());
 
         return $nomFichier;
     }

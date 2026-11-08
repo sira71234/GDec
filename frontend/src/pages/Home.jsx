@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import ArticleCard from "../composants/ArticleCards.jsx";
+import Reveal from "../composants/Reveal.jsx";
 import { getVitrine } from "../services/catalogueService";
 import { storageUrl } from "../services/api";
 
@@ -52,23 +52,18 @@ function Home() {
         {banniere.image && <div className="absolute inset-0 bg-emerald-900/70" />}
         <div className="relative">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">{banniere.titre}</h1>
-          <p className="text-lg mb-6 max-w-2xl mx-auto">{banniere.sous_titre}</p>
-          <Link
-            to="/commande"
-            className="bg-yellow-500 text-gray-900 font-semibold px-6 py-3 rounded-lg inline-block"
-          >
-            Commander maintenant
-          </Link>
+          <p className="text-lg max-w-2xl mx-auto">{banniere.sous_titre}</p>
         </div>
       </section>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6">
         {galerie.map((article, index) => (
-          <ArticleCard
-            key={article.photo ?? index}
-            photo={article.photo}
-            nom={article.nom}
-          />
+          <Reveal key={article.photo ?? index} delai={(index % 6) * 70} className="h-full">
+            <ArticleCard
+              photo={article.photo}
+              nom={article.nom}
+            />
+          </Reveal>
         ))}
       </div>
 

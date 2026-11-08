@@ -27,7 +27,7 @@ class CommandeTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public'); // Évite d'écrire physiquement les fichiers PDF
+        Storage::fake('local'); // Évite d'écrire physiquement les fichiers PDF
         Mail::fake();            // Évite d'envoyer de vrais e-mails sur le réseau
     }
 
@@ -134,7 +134,7 @@ class CommandeTest extends TestCase
         $service = app(PdfGeneratorService::class);
         $chemin = $service->genererRecapitulatif($commande);
 
-        Storage::disk('public')->assertExists($chemin);
+        Storage::disk('local')->assertExists($chemin);
         $this->assertStringStartsWith('devis/', $chemin);
         $this->assertStringEndsWith('.pdf', $chemin);
     }

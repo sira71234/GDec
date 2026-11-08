@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('commande_id')->constrained('commandes')->onDelete('cascade');
-            
+
             $table->string('fichier_pdf');
             $table->decimal('montant_total', 10, 2);
             $table->timestamp('date_generation')->useCurrent();

@@ -168,7 +168,6 @@ function PhotoUploader({ label = "Photo", fichier, onFichier, photoExistante, re
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={(event) => onFichier(event.target.files?.[0] ?? null)}
       />

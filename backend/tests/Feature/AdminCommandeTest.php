@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\Commande;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -190,5 +191,24 @@ class AdminCommandeTest extends TestCase
         $this->assertEquals(75000, $response->json('commande.montant_decoration_effectif'));
         $this->assertEquals(75000, $response->json('commande.montant_total'));
         $this->assertEquals(75000, (float) $commande->fresh()->montant_decoration);
+    }
+
+    public function test_ladmin_peut_telecharger_une_piece_identite_stockee_en_prive()
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('pieces_identite/cni.jpg', 'contenu-test');
+
+        $commande = Commande::factory()->create([
+            'piece_identite_photo' => 'pieces_identite/cni.jpg',
+            'piece_identite_type' => 'CNI',
+        ]);
+
+        $response = $this->get("/api/admin/commandes/{$commande->id}/piece-identite");
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'piece_identite_commande_'.$commande->id,
+            (string) $response->headers->get('content-disposition'),
+        );
     }
 }

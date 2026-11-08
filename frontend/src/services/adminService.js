@@ -1,48 +1,70 @@
-import api from "./api";
+import api, { asArray, asObject } from "./api";
+import {
+  effacerSession,
+  enregistrerSession,
+  lireAdmin,
+  lireJeton,
+} from "./authStorage";
 
 // --- Authentification administrateur ---
 
 export async function login(identifiant, motDePasse, codeAdmin) {
-  const { data } = await api.post("/admin/login", {
+  const reponse = await api.post("/admin/login", {
     identifiant,
     mot_de_passe: motDePasse,
     code_admin: codeAdmin,
   });
-  if (data.token) {
-    localStorage.setItem("admin_token", data.token);
-    localStorage.setItem("admin", JSON.stringify(data.admin));
+
+  const data = asObject(reponse.data);
+  const jeton = typeof data.token === "string" ? data.token.trim() : "";
+
+  // Un serveur mal configuré peut répondre 200 avec une page HTML (proxy,
+  // page de suspension, rewrite cassé). Sans jeton, on refuse la connexion
+  // au lieu de naviguer vers le tableau de bord pour revenir aussitôt.
+  if (!jeton) {
+    const typeContenu = reponse.headers?.["content-type"] ?? "inconnu";
+    const erreur = new Error(
+      `Réponse de connexion invalide (HTTP ${reponse.status}, ${typeContenu}). ` +
+        "Le serveur n'a pas renvoyé de jeton.",
+    );
+    erreur.code = "REPONSE_INVALIDE";
+    erreur.statut = reponse.status;
+    erreur.typeContenu = typeContenu;
+    throw erreur;
   }
-  return data;
+
+  const admin = asObject(data.admin);
+  enregistrerSession(jeton, Object.keys(admin).length > 0 ? admin : null);
+
+  return { ...data, token: jeton };
 }
 
 export async function logout() {
   try {
     await api.post("/admin/logout");
   } finally {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin");
+    effacerSession();
   }
 }
 
 export async function me() {
   const { data } = await api.get("/admin/me");
-  return data;
+  return asObject(data);
 }
 
 export function getAdmin() {
-  const brut = localStorage.getItem("admin");
-  return brut ? JSON.parse(brut) : null;
+  return lireAdmin();
 }
 
 export function isAuthenticated() {
-  return Boolean(localStorage.getItem("admin_token"));
+  return Boolean(lireJeton());
 }
 
 // --- Demandes ---
 
 export async function getCommandes(params = {}) {
   const { data } = await api.get("/admin/commandes", { params });
-  return data;
+  return { ...asObject(data), data: asArray(data?.data ?? data) };
 }
 
 export async function getCommande(id) {
@@ -53,7 +75,7 @@ export async function getCommande(id) {
 // Commandes passées (date dépassée de plus de deux jours).
 export async function getHistoriqueCommandes(params = {}) {
   const { data } = await api.get("/admin/commandes/historique", { params });
-  return data;
+  return { ...asObject(data), data: asArray(data?.data ?? data) };
 }
 
 export async function updateStatut(id, statut) {
@@ -69,7 +91,7 @@ export async function updateCommande(id, donnees) {
 
 export async function getCorbeille() {
   const { data } = await api.get("/admin/commandes/corbeille");
-  return data;
+  return { ...asObject(data), data: asArray(data?.data ?? data) };
 }
 
 export async function restaurerCommande(id) {
@@ -104,11 +126,28 @@ export async function telechargerDevis(devisId, nomFichier = "devis.pdf") {
   window.URL.revokeObjectURL(url);
 }
 
+// La pièce d'identité est également stockée sur un disque privé.
+export async function telechargerPieceIdentite(commandeId) {
+  const response = await api.get(`/admin/commandes/${commandeId}/piece-identite`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(
+    new Blob([response.data], { type: response.headers["content-type"] }),
+  );
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", `piece_identite_commande_${commandeId}`);
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 // --- Disponibilités ---
 
 export async function getDisponibilites(params = {}) {
   const { data } = await api.get("/admin/disponibilites", { params });
-  return data;
+  return asArray(data);
 }
 
 // --- Gestion du catalogue (matériels / prestations / éléments) ---
@@ -117,7 +156,7 @@ export async function getDisponibilites(params = {}) {
 
 export async function getAdminMateriels() {
   const { data } = await api.get("/admin/materiels");
-  return data;
+  return asArray(data);
 }
 
 export async function createMateriel(formData) {
@@ -137,7 +176,7 @@ export async function deleteMateriel(id) {
 
 export async function getAdminPrestations() {
   const { data } = await api.get("/admin/prestations-decoration");
-  return data;
+  return asArray(data);
 }
 
 export async function createPrestation(formData) {
@@ -157,7 +196,7 @@ export async function deletePrestation(id) {
 
 export async function getAdminElements() {
   const { data } = await api.get("/admin/elements-decor");
-  return data;
+  return asArray(data);
 }
 
 export async function createElement(formData) {
@@ -179,7 +218,12 @@ export async function deleteElement(id) {
 
 export async function getAdminVitrine() {
   const { data } = await api.get("/admin/vitrine");
-  return data;
+  return {
+    ...asObject(data),
+    banniere: asObject(data?.banniere),
+    galerie: asArray(data?.galerie),
+    sections: asArray(data?.sections),
+  };
 }
 
 export async function updateBanniere(formData) {

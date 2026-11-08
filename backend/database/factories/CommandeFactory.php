@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\Commande;
 use App\Models\Client;
+use App\Models\Commande;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Commande>
+ * @extends Factory<Commande>
  */
 class CommandeFactory extends Factory
 {

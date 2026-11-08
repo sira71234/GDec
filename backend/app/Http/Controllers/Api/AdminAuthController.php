@@ -8,6 +8,7 @@ use App\Models\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AdminAuthController extends Controller
 {
@@ -21,6 +22,14 @@ class AdminAuthController extends Controller
     {
         $donnees = $request->validated();
 
+        // Trace minimale : identifiant et IP uniquement, jamais les secrets.
+        // Si cette ligne n'apparaît pas dans laravel.log, la requête n'a pas
+        // atteint Laravel (proxy, WAF, rewrite ou suspension de l'hébergeur).
+        Log::info('Tentative de connexion admin reçue.', [
+            'identifiant' => $donnees['identifiant'],
+            'ip' => $request->ip(),
+        ]);
+
         /** @var Admin|null $admin */
         $admin = Admin::where('identifiant', $donnees['identifiant'])->first();
 
@@ -31,12 +40,24 @@ class AdminAuthController extends Controller
             || ! Hash::check($donnees['mot_de_passe'], $admin->mot_de_passe)
             || ! Hash::check($donnees['code_admin'], $admin->code_admin)
         ) {
+            Log::warning('Connexion admin refusée.', [
+                'identifiant' => $donnees['identifiant'],
+                'ip' => $request->ip(),
+                'compte_trouve' => $admin !== null,
+            ]);
+
             return response()->json([
                 'message' => 'Identifiant, mot de passe ou code administrateur invalide.',
             ], 401);
         }
 
         $token = $admin->createToken('admin-token')->plainTextToken;
+
+        Log::info('Connexion admin réussie.', [
+            'admin_id' => $admin->id,
+            'identifiant' => $admin->identifiant,
+            'ip' => $request->ip(),
+        ]);
 
         return response()->json([
             'message' => 'Connexion réussie.',

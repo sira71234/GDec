@@ -10,7 +10,7 @@ class Client extends Model
 {
     use HasFactory, SoftDeletes;
     // SoftDeletes : un client supprimé passe en corbeille (deleted_at rempli)
-    // au lieu d'être effacé définitivement. 
+    // au lieu d'être effacé définitivement.
 
     // Champs autorisés à être remplis via create()/update() (mass assignment).
     // Correspond exactement aux colonnes du dictionnaire de données, hors id/timestamps.

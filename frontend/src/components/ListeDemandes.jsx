@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { getCommande, updateCommande } from "../services/adminService";
+import {
+  getCommande,
+  updateCommande,
+  telechargerPieceIdentite,
+} from "../services/adminService";
 import { couleurClient } from "../utils/couleurs";
 import DevisViewer from "./DevisViewer";
 
@@ -323,6 +327,26 @@ function ListeDemandes({
                       <strong>Sous-total location :</strong>{" "}
                       {fcfa(detail.montant_location)}
                     </p>
+                    {detail.piece_identite_photo && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await telechargerPieceIdentite(detail.id);
+                          } catch {
+                            setErreurEdition(
+                              "Téléchargement de la pièce d'identité impossible.",
+                            );
+                          }
+                        }}
+                        className="mt-2 text-sm font-semibold text-emerald-700 hover:underline"
+                      >
+                        Télécharger la pièce d'identité
+                        {detail.piece_identite_type
+                          ? ` (${detail.piece_identite_type})`
+                          : ""}
+                      </button>
+                    )}
                   </div>
                 )}
 

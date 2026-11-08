@@ -21,6 +21,7 @@ class CommandeStoreTest extends TestCase
     {
         parent::setUp();
 
+        Storage::fake('local');
         Storage::fake('public');
         Mail::fake();
     }
@@ -70,7 +71,10 @@ class CommandeStoreTest extends TestCase
         ]);
 
         Mail::assertQueued(CommandeConfirmationMail::class);
-        $this->assertNotEmpty(Storage::disk('public')->allFiles('devis'));
+        $this->assertNotEmpty(Storage::disk('local')->allFiles('devis'));
+        // La pièce d'identité est stockée sur le disque privé, pas en public.
+        $this->assertNotEmpty(Storage::disk('local')->allFiles('pieces_identite'));
+        $this->assertEmpty(Storage::disk('public')->allFiles('pieces_identite'));
     }
 
     public function test_la_soumission_dune_commande_decoration_enregistre_prestations_et_elements()
@@ -184,5 +188,62 @@ class CommandeStoreTest extends TestCase
         $this->assertDatabaseCount('clients', 1);
         $this->assertDatabaseHas('clients', ['telephone' => '0199999999', 'nom' => 'Même client']);
         $this->assertDatabaseCount('commandes', 2);
+    }
+
+    public function test_une_quantite_superieure_au_stock_est_rejetee()
+    {
+        $materiel = Materiel::factory()->create(['quantite_stock' => 2]);
+
+        $payload = [
+            'type_prestation' => 'location',
+            'client' => [
+                'nom' => 'Stock Test',
+                'telephone' => '0191111111',
+                'adresse' => 'Cotonou',
+            ],
+            'date_debut_location' => now()->addDay()->toDateString(),
+            'date_fin_location' => now()->addDays(2)->toDateString(),
+            'piece_identite_type' => 'CNI',
+            'piece_identite_photo' => UploadedFile::fake()->image('cni.jpg'),
+            'materiels' => [['id' => $materiel->id, 'quantite' => 3]],
+        ];
+
+        $this->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/commandes', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['materiels']);
+    }
+
+    public function test_un_numero_deja_utilise_avec_un_autre_nom_est_rejete()
+    {
+        $materiel = Materiel::factory()->create();
+
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', [
+            'type_prestation' => 'location',
+            'client' => [
+                'nom' => 'Premier Client',
+                'telephone' => '0192222222',
+                'adresse' => 'Cotonou',
+            ],
+            'date_debut_location' => now()->addDay()->toDateString(),
+            'date_fin_location' => now()->addDays(2)->toDateString(),
+            'piece_identite_type' => 'CNI',
+            'piece_identite_photo' => UploadedFile::fake()->image('cni.jpg'),
+            'materiels' => [['id' => $materiel->id, 'quantite' => 1]],
+        ])->assertCreated();
+
+        $this->withHeaders(['Accept' => 'application/json'])->post('/api/commandes', [
+            'type_prestation' => 'location',
+            'client' => [
+                'nom' => 'Usurpateur',
+                'telephone' => '0192222222',
+                'adresse' => 'Cotonou',
+            ],
+            'date_debut_location' => now()->addDay()->toDateString(),
+            'date_fin_location' => now()->addDays(2)->toDateString(),
+            'piece_identite_type' => 'CNI',
+            'piece_identite_photo' => UploadedFile::fake()->image('cni.jpg'),
+            'materiels' => [['id' => $materiel->id, 'quantite' => 1]],
+        ])->assertStatus(422)->assertJsonValidationErrors(['client.telephone']);
     }
 }

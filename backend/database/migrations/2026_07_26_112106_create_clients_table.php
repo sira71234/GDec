@@ -20,7 +20,7 @@ return new class extends Migration
             // Toujours obligatoire : c'est le moyen de contact principal
             $table->string('telephone')->index();
 
-            // MODIFICATION 2 : email nullable + index 
+            // MODIFICATION 2 : email nullable + index
             // RAISON : Le dictionnaire de données précise "email nullable" — un client
             // peut commander sans email. Le client n'a pas de compte, donc pas de contrainte
             // unique : il doit pouvoir repasser commande avec le même email sans être bloqué.

@@ -12,6 +12,7 @@ use App\Services\MailNotificationService;
 use App\Services\PdfGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CommandeController extends Controller
 {
@@ -36,19 +37,49 @@ class CommandeController extends Controller
             // Le téléphone identifie la fiche client et permet de la réutiliser.
             $clientData = array_filter([
                 'nom' => $donnees['client']['nom'],
+                'telephone' => $donnees['client']['telephone'],
                 'email' => $donnees['client']['email'] ?? null,
-                'adresse' => $donnees['client']['adresse'],
+                'adresse' => $donnees['client']['adresse'] ?? null,
             ], fn ($valeur) => $valeur !== null && $valeur !== '');
 
-            $client = Client::updateOrCreate(
-                ['telephone' => $donnees['client']['telephone']],
-                $clientData,
-            );
+            $client = Client::where('telephone', $clientData['telephone'])->first();
+
+            // L'email appartient-il déjà à un autre client (autre téléphone) ?
+            if (! empty($clientData['email'])
+                && Client::where('email', $clientData['email'])
+                    ->where('telephone', '!=', $clientData['telephone'])
+                    ->exists()) {
+                throw ValidationException::withMessages([
+                    'client.email' => 'Cet email est déjà utilisé par un autre client.',
+                ]);
+            }
+
+            if ($client) {
+                $memeNom = mb_strtolower(trim($client->nom)) === mb_strtolower(trim($clientData['nom']));
+                $emailDifferent = ! empty($client->email) && ! empty($clientData['email'])
+                    && mb_strtolower($client->email) !== mb_strtolower($clientData['email']);
+
+                if (! $memeNom || $emailDifferent) {
+                    throw ValidationException::withMessages([
+                        'client.telephone' => 'Ce numéro est déjà associé à un autre client. Vérifiez vos informations ou contactez-nous.',
+                    ]);
+                }
+
+                // Même personne : on complète seulement les champs encore vides.
+                foreach (['email', 'adresse'] as $champ) {
+                    if (empty($client->$champ) && ! empty($clientData[$champ])) {
+                        $client->$champ = $clientData[$champ];
+                    }
+                }
+                $client->save();
+            } else {
+                $client = Client::create($clientData);
+            }
 
             // Stockage optionnel de la pièce d'identité (location).
             $pieceIdentitePhoto = null;
             if ($request->hasFile('piece_identite_photo')) {
-                $pieceIdentitePhoto = $request->file('piece_identite_photo')->store('pieces_identite', 'public');
+                $pieceIdentitePhoto = $request->file('piece_identite_photo')->store('pieces_identite', 'local');
             }
 
             $commande = $client->commandes()->create([

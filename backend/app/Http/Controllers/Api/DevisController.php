@@ -47,7 +47,7 @@ class DevisController extends Controller
         return response()->json([
             'message' => 'Devis généré avec succès.',
             'devis' => $devis,
-            'url' => Storage::disk('public')->url($cheminPdf),
+            'url' => url("/api/devis/{$devis->id}/telecharger"),
         ], 201);
     }
 
@@ -58,13 +58,19 @@ class DevisController extends Controller
      */
     public function telecharger(Devis $devis): StreamedResponse
     {
+        // Rétrocompatibilité : les anciens devis peuvent encore se trouver
+        // sur le disque public. Les nouveaux sont écrits sur le disque privé.
+        $disque = Storage::disk('local')->exists($devis->fichier_pdf)
+            ? 'local'
+            : 'public';
+
         abort_unless(
-            Storage::disk('public')->exists($devis->fichier_pdf),
+            Storage::disk($disque)->exists($devis->fichier_pdf),
             404,
             'Fichier de devis introuvable.',
         );
 
-        return Storage::disk('public')->download(
+        return Storage::disk($disque)->download(
             $devis->fichier_pdf,
             'devis_commande_'.$devis->commande_id.'.pdf',
         );

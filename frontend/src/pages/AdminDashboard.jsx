@@ -24,6 +24,21 @@ const FILTRES = [
   { valeur: "refuse", libelle: "Refusées" },
 ];
 
+// Message d'erreur exploitable : distingue un refus d'authentification d'une
+// panne réseau, sans renvoyer l'utilisateur vers la page de connexion en boucle.
+function messageErreur(error, defaut) {
+  if (error?.response?.status === 401) {
+    return "Session refusée par le serveur (401). Reconnectez-vous depuis la page de connexion.";
+  }
+  if (error?.code === "ECONNABORTED") {
+    return "Le serveur n'a pas répondu à temps.";
+  }
+  if (!error?.response) {
+    return "Serveur injoignable. Vérifiez votre connexion internet.";
+  }
+  return defaut;
+}
+
 function AdminDashboard() {
   const navigate = useNavigate();
   const [onglet, setOnglet] = useState("demandes");
@@ -47,9 +62,9 @@ function AdminDashboard() {
     setErreur(null);
     try {
       const reponse = await getCommandes(filtre ? { statut: filtre } : {});
-      setCommandes(reponse.data ?? []);
-    } catch {
-      setErreur("Impossible de charger les demandes.");
+      setCommandes(Array.isArray(reponse.data) ? reponse.data : []);
+    } catch (error) {
+      setErreur(messageErreur(error, "Impossible de charger les demandes."));
     } finally {
       setChargement(false);
     }
@@ -59,9 +74,9 @@ function AdminDashboard() {
     setChargement(true);
     try {
       const reponse = await getCorbeille();
-      setCorbeille(reponse.data ?? []);
-    } catch {
-      setErreur("Impossible de charger la corbeille.");
+      setCorbeille(Array.isArray(reponse.data) ? reponse.data : []);
+    } catch (error) {
+      setErreur(messageErreur(error, "Impossible de charger la corbeille."));
     } finally {
       setChargement(false);
     }
@@ -72,9 +87,9 @@ function AdminDashboard() {
     setErreur(null);
     try {
       const reponse = await getHistoriqueCommandes();
-      setHistoriqueCommandes(reponse.data ?? []);
-    } catch {
-      setErreur("Impossible de charger l'historique.");
+      setHistoriqueCommandes(Array.isArray(reponse.data) ? reponse.data : []);
+    } catch (error) {
+      setErreur(messageErreur(error, "Impossible de charger l'historique."));
     } finally {
       setChargement(false);
     }
@@ -114,7 +129,7 @@ function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-emerald-800 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Tableau de bord administrateur</h1>
             {admin && (
@@ -153,7 +168,7 @@ function AdminDashboard() {
           ))}
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           {[
             { cle: "demandes", libelle: "Demandes" },
             { cle: "disponibilites", libelle: "Disponibilités" },

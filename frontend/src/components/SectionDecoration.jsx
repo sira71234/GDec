@@ -182,7 +182,7 @@ function SectionDecoration() {
       </div>
 
       {/* Prestations de décoration */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 px-6">
+      <div className="grid grid-cols-1 gap-4 px-6 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
         {chargement && <p className="text-gray-500">Chargement des prestations…</p>}
         {erreur && <p className="text-red-600">{erreur}</p>}
         {prestations.map((prestation) => (

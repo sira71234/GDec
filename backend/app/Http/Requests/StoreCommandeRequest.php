@@ -65,7 +65,7 @@ class StoreCommandeRequest extends FormRequest
             // Matériel loué (au moins une ligne si location).
             'materiels' => [Rule::requiredIf($besoinLocation), 'array'],
             'materiels.*.id' => ['required', 'integer', 'distinct', 'exists:materiels,id'],
-            'materiels.*.quantite' => ['required', 'integer', 'min:1'],
+            'materiels.*.quantite' => ['required', 'integer', 'min:1', 'max:100'],
 
             // Prestations de décoration (facultatif, quantité facultative).
             'prestations_decoration' => ['nullable', 'array'],

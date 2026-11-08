@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\ElementDecor;
 use App\Models\Materiel;
 use App\Models\PrestationDecoration;
-use App\Models\ElementDecor; // 1. Import du modèle manquant
+use Illuminate\Database\Seeder; // 1. Import du modèle manquant
 
 class CatalogueSeeder extends Seeder
 {
