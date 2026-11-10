@@ -108,10 +108,12 @@ jobs:
             storage/**
             tests/**
             database/**
+            public/storage
             public/storage/**
+            public/index.html
+            public/assets/**
             .env
             .env.*
-            .htaccess
             .agents/**
             AGENTS.md
             README.md

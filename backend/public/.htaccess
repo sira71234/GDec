@@ -23,10 +23,15 @@
     RewriteRule ^storage/(pieces_identite|devis)(/|$) - [F,L]
 
     # API Laravel.
+    # - /api/... quand la racine réécrit directement vers public/index.php ;
+    # - /public/api/... quand le site est consulté via /public/.
+    # La condition !-f évite une boucle si la requête cible déjà index.php.
     RewriteCond %{REQUEST_URI} ^(/public)?/api
+    RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 
-    # Application React (uniquement si le build est présent dans public/).
+    # Application React (build présent dans public/ ou à la racine du site).
+    RewriteCond %{DOCUMENT_ROOT}/index.html -f [OR]
     RewriteCond %{DOCUMENT_ROOT}/public/index.html -f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -50,6 +55,13 @@
     <IfModule !mod_authz_core.c>
         Order allow,deny
         Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Les challenges ACME (.well-known) doivent rester accessibles pour le SSL.
+<FilesMatch "^\.well-known$">
+    <IfModule mod_authz_core.c>
+        Require all granted
     </IfModule>
 </FilesMatch>
 

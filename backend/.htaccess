@@ -1,0 +1,83 @@
+# Racine du compte d'hébergement.
+# Le projet Laravel est dans htdocs/ et son dossier public/ contient à la fois
+# le point d'entrée PHP et le build React. Ce fichier est indispensable sur
+# InfinityFree : sans lui, /api/... est renvoyé vers index.html (page React)
+# et les appels API reçoivent du HTML au lieu du JSON.
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Bloque les fichiers et dossiers cachés (.git, .env, .htaccess...),
+    # sauf le dossier ACME utilisé pour les certificats SSL.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule (^|/)\. - [F,L]
+
+    # Transmet l'en-tête Authorization à PHP (jetons Sanctum).
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Les URLs déjà préfixées par /public/ sont servies telles quelles
+    # (public/.htaccess applique ensuite ses propres règles).
+    RewriteRule ^public(/|$) - [L]
+
+    # Anciens documents clients : ne jamais les servir, même s'ils subsistent
+    # dans public/storage après la migration vers le disque privé.
+    RewriteRule ^storage/(pieces_identite|devis)(/|$) - [F,L]
+
+    # Dossiers internes de l'application : jamais accessibles par HTTP.
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|tests|vendor)(/|$) - [F,L]
+    RewriteRule ^storage/(app|framework|logs)(/|$) - [F,L]
+
+    # API Laravel : /api/... doit être traité par public/index.php.
+    # Laravel lit REQUEST_URI et retrouve bien la route /api/...
+    RewriteRule ^api(/.*)?$ public/index.php [L]
+
+    # Racine du site : build React.
+    RewriteRule ^$ public/index.html [L]
+
+    # Fichiers statiques servis depuis public/ (assets, storage public,
+    # favicon, robots.txt, index.html...).
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Routes React (SPA) : tout le reste renvoie index.html.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ public/index.html [L]
+</IfModule>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.html index.php
+</IfModule>
+
+# --- Sécurité : ne jamais servir les fichiers sensibles ---
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Les challenges ACME (.well-known) doivent rester accessibles pour le SSL.
+<FilesMatch "^\.well-known$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "(?i)^(composer\.(json|lock)|artisan|phpunit\.xml(\.dist)?|README\.md|AGENTS\.md|.*\.(log|sql|bak|ini|sh|md))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
