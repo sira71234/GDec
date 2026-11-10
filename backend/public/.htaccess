@@ -94,7 +94,10 @@
     <FilesMatch "\.(jpg|jpeg|png|webp|gif|svg|woff2?|css|js)$">
         Header set Cache-Control "public, max-age=2592000, immutable"
     </FilesMatch>
+    # L'entrée HTML et les réponses JSON ne doivent jamais être réutilisées
+    # depuis un cache : après un déploiement, chaque appareil doit charger le
+    # nouveau build JS (sinon l'ancien écran de connexion reste affiché).
     <FilesMatch "\.(html|json)$">
-        Header set Cache-Control "no-cache"
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     </FilesMatch>
 </IfModule>

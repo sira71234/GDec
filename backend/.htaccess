@@ -54,6 +54,14 @@
     DirectoryIndex index.html index.php
 </IfModule>
 
+# Après un déploiement, l'entrée HTML ne doit pas rester en cache sur les
+# appareils : sinon l'ancien build JS continue d'être exécuté.
+<IfModule mod_headers.c>
+    <FilesMatch "^index\.html$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    </FilesMatch>
+</IfModule>
+
 # --- Sécurité : ne jamais servir les fichiers sensibles ---
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

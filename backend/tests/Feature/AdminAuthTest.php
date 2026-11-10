@@ -99,6 +99,53 @@ class AdminAuthTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
+    public function test_plusieurs_appareils_peuvent_avoir_une_session_simultanee()
+    {
+        Admin::factory()->create([
+            'identifiant' => 'boss',
+            'mot_de_passe' => 'secret123',
+            'code_admin' => '654321',
+        ]);
+
+        $identifiants = [
+            'identifiant' => 'boss',
+            'mot_de_passe' => 'secret123',
+            'code_admin' => '654321',
+        ];
+
+        $premierJeton = $this->postJson('/api/admin/login', $identifiants)
+            ->assertOk()
+            ->json('token');
+        $secondJeton = $this->postJson('/api/admin/login', $identifiants)
+            ->assertOk()
+            ->json('token');
+
+        // Chaque appareil reçoit son propre jeton.
+        $this->assertNotSame($premierJeton, $secondJeton);
+
+        // La déconnexion d'un appareil ne doit pas déconnecter les autres.
+        $this->withHeader('Authorization', 'Bearer '.$premierJeton)
+            ->postJson('/api/admin/logout')
+            ->assertOk();
+
+        $this->withHeader('Authorization', 'Bearer '.$secondJeton)
+            ->getJson('/api/admin/me')
+            ->assertOk();
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+    }
+
+    public function test_la_connexion_admin_est_limitee_a_15_tentatives_par_minute()
+    {
+        // Le middleware de limitation s'exécute avant la validation : ces
+        // requêtes incomplètes consomment quand même le quota.
+        for ($i = 0; $i < 15; $i++) {
+            $this->postJson('/api/admin/login', [])->assertStatus(422);
+        }
+
+        $this->postJson('/api/admin/login', [])->assertStatus(429);
+    }
+
     public function test_les_tentatives_de_connexion_sont_journalisees_sans_secrets()
     {
         Log::spy();

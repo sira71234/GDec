@@ -54,7 +54,12 @@ function AdminLogin() {
           message || "Connexion refusée. Vérifiez vos identifiants et le code admin.",
         );
       } else if (statut === 429) {
-        setErreur("Trop de tentatives. Patientez une minute avant de réessayer.");
+        const attente = Number(error.response?.headers?.["retry-after"]);
+        setErreur(
+          Number.isFinite(attente) && attente > 0
+            ? `Trop de tentatives. Réessayez dans ${attente} seconde${attente > 1 ? "s" : ""}.`
+            : "Trop de tentatives. Patientez une minute avant de réessayer.",
+        );
       } else {
         setErreur(
           `Connexion impossible (erreur serveur ${statut ?? "inconnue"}). Veuillez réessayer.`,

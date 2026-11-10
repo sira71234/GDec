@@ -38,7 +38,7 @@ Route::get('/disponibilites/verifier', [DisponibiliteController::class, 'verifie
 
 // Connexion administrateur (identifiant + mot de passe + code admin).
 Route::post('/admin/login', [AdminAuthController::class, 'login'])
-    ->middleware('throttle:5,1');
+    ->middleware('throttle:admin-login');
 
 // Routes protégées par jeton Sanctum (espace administrateur).
 Route::middleware('auth:sanctum')->group(function () {
