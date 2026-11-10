@@ -88,7 +88,7 @@ jobs:
           local-dir: frontend/dist/
           server-dir: htdocs/public/
           state-name: .ftp-state-front.json
-          dry-run: true
+          dry-run: false
 
       - name: Envoyer le code du back (sans vendor, .env ni storage)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -99,7 +99,7 @@ jobs:
           local-dir: backend/
           server-dir: htdocs/
           state-name: .ftp-state-back.json
-          dry-run: true
+          dry-run: false
           exclude: |
             **/.git*
             **/.git*/**
