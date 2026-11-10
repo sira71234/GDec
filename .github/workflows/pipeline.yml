@@ -87,7 +87,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: frontend/dist/
           server-dir: htdocs/public/
-          state-name: .ftp-state-front.json
+          state-name: .ftp-state-front-v2.json
           dry-run: false
 
       - name: Envoyer le code du back (sans vendor, .env ni storage)
