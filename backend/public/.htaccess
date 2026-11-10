@@ -23,7 +23,7 @@
     RewriteRule ^storage/(pieces_identite|devis)(/|$) - [F,L]
 
     # API Laravel.
-    RewriteCond %{REQUEST_URI} ^/api
+    RewriteCond %{REQUEST_URI} ^(/public)?/api
     RewriteRule ^ index.php [L]
 
     # Application React (uniquement si le build est présent dans public/).
