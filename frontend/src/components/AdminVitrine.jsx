@@ -18,6 +18,9 @@ function AdminVitrine() {
 
   const [banniere, setBanniere] = useState({ titre: "", sous_titre: "" });
   const [banniereImage, setBanniereImage] = useState(null);
+  // Le retrait de l'image de fond est envoyé au serveur lors de
+  // l'enregistrement, comme le ferait un nouvel import.
+  const [supprimerImageBanniere, setSupprimerImageBanniere] = useState(false);
 
   const [imageTitre, setImageTitre] = useState("");
   const [imageFichier, setImageFichier] = useState(null);
@@ -59,12 +62,15 @@ function AdminVitrine() {
     donnees.append("sous_titre", banniere.sous_titre ?? "");
     if (banniereImage) {
       donnees.append("image", banniereImage);
+    } else if (supprimerImageBanniere) {
+      donnees.append("supprimer_image", "1");
     }
 
     try {
       const reponse = await updateBanniere(donnees);
       setVitrine(reponse.vitrine);
       setBanniereImage(null);
+      setSupprimerImageBanniere(false);
       setMessage("Bannière enregistrée.");
     } catch {
       setErreur("Enregistrement de la bannière impossible. Vérifiez les champs.");
@@ -205,9 +211,38 @@ function AdminVitrine() {
           <PhotoUploader
             label="Image de fond (facultatif)"
             fichier={banniereImage}
-            onFichier={setBanniereImage}
-            photoExistante={vitrine.banniere?.image}
+            onFichier={(fichier) => {
+              setBanniereImage(fichier);
+              if (fichier) {
+                setSupprimerImageBanniere(false);
+              }
+            }}
+            photoExistante={
+              supprimerImageBanniere ? null : vitrine.banniere?.image
+            }
           />
+          {vitrine.banniere?.image && !banniereImage && (
+            supprimerImageBanniere ? (
+              <p className="text-sm text-amber-700">
+                L&apos;image de fond sera retirée à l&apos;enregistrement.{" "}
+                <button
+                  type="button"
+                  onClick={() => setSupprimerImageBanniere(false)}
+                  className="underline font-semibold"
+                >
+                  Annuler
+                </button>
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSupprimerImageBanniere(true)}
+                className="text-sm text-red-600 underline font-semibold"
+              >
+                Retirer l&apos;image de fond
+              </button>
+            )
+          )}
           <button
             type="submit"
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded-lg"

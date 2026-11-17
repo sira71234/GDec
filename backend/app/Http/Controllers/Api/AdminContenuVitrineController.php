@@ -30,22 +30,27 @@ class AdminContenuVitrineController extends Controller
             'titre' => ['nullable', 'string', 'max:255'],
             'sous_titre' => ['nullable', 'string', 'max:255'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            // FormData ne peut pas transporter une valeur nulle : le front
+            // signale explicitement le retrait de l'image de fond.
+            'supprimer_image' => ['nullable', 'boolean'],
         ]);
 
         $this->setBanniere('titre', $donnees['titre'] ?? null);
         $this->setBanniere('sous_titre', $donnees['sous_titre'] ?? null);
 
-        if ($request->hasFile('image')) {
-            $ancienne = ContenuVitrine::where('section', ContenuVitrine::SECTION_BANNIERE)
-                ->where('cle', 'image')
-                ->value('valeur');
+        $requeteImage = ContenuVitrine::where('section', ContenuVitrine::SECTION_BANNIERE)
+            ->where('cle', 'image');
 
-            $chemin = $this->images->replace($request->file('image'), $ancienne, 'vitrine');
+        if ($request->hasFile('image')) {
+            $chemin = $this->images->replace($request->file('image'), $requeteImage->value('valeur'), 'vitrine');
 
             ContenuVitrine::updateOrCreate(
                 ['section' => ContenuVitrine::SECTION_BANNIERE, 'cle' => 'image'],
                 ['type' => ContenuVitrine::TYPE_IMAGE, 'valeur' => $chemin],
             );
+        } elseif ($request->boolean('supprimer_image')) {
+            $this->images->delete($requeteImage->value('valeur'));
+            $requeteImage->delete();
         }
 
         return response()->json([

@@ -82,6 +82,31 @@ class VitrineTest extends TestCase
         Storage::disk('public')->assertExists($colonneImage);
     }
 
+    public function test_ladmin_peut_retirer_l_image_de_la_banniere()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $this->post('/api/admin/vitrine/banniere', [
+            'titre' => 'Titre conservé',
+            'image' => UploadedFile::fake()->image('banniere.jpg'),
+        ])->assertOk();
+
+        $chemin = ContenuVitrine::where('cle', 'image')->value('valeur');
+        $this->assertNotNull($chemin);
+
+        // FormData ne transporte pas de valeur nulle : le retrait passe par
+        // un indicateur explicite.
+        $this->post('/api/admin/vitrine/banniere', [
+            'titre' => 'Titre conservé',
+            'supprimer_image' => '1',
+        ])->assertOk()
+            ->assertJsonPath('vitrine.banniere.image', null)
+            ->assertJsonPath('vitrine.banniere.titre', 'Titre conservé');
+
+        $this->assertNull(ContenuVitrine::where('cle', 'image')->value('valeur'));
+        Storage::disk('public')->assertMissing($chemin);
+    }
+
     public function test_ladmin_ajoute_une_image_a_la_galerie()
     {
         Sanctum::actingAs(Admin::factory()->create());
