@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\CatalogueController;
 use App\Http\Controllers\Api\CommandeController;
 use App\Http\Controllers\Api\DevisController;
 use App\Http\Controllers\Api\DisponibiliteController;
+use App\Http\Controllers\Api\SuperAdminAdministrateurController;
+use App\Http\Controllers\Api\SuperAdminAuthController;
 use App\Http\Controllers\Api\VitrineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +40,11 @@ Route::get('/disponibilites/verifier', [DisponibiliteController::class, 'verifie
 
 // Connexion administrateur (identifiant + mot de passe + code admin).
 Route::post('/admin/login', [AdminAuthController::class, 'login'])
+    ->middleware('throttle:admin-login');
+
+// Connexion dédiée au super administrateur : même procédé d'authentification,
+// mais seuls les comptes "super_admin" sont acceptés.
+Route::post('/super-admin/login', [SuperAdminAuthController::class, 'login'])
     ->middleware('throttle:admin-login');
 
 // Routes protégées par jeton Sanctum (espace administrateur).
@@ -93,4 +100,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Téléchargement d'un devis généré.
     Route::get('/devis/{devis}/telecharger', [DevisController::class, 'telecharger']);
+});
+
+// Gestion des comptes administrateurs, réservée au super administrateur.
+Route::middleware(['auth:sanctum', 'super-admin'])->prefix('super-admin')->group(function () {
+    Route::get('/me', [SuperAdminAuthController::class, 'me']);
+
+    Route::get('/administrateurs', [SuperAdminAdministrateurController::class, 'index']);
+    Route::post('/administrateurs', [SuperAdminAdministrateurController::class, 'store']);
+    Route::match(['put', 'patch', 'post'], '/administrateurs/{administrateur}', [SuperAdminAdministrateurController::class, 'update']);
+    Route::delete('/administrateurs/{administrateur}', [SuperAdminAdministrateurController::class, 'destroy']);
 });

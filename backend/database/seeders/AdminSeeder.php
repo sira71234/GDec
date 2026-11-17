@@ -19,6 +19,7 @@ class AdminSeeder extends Seeder
             [
                 'mot_de_passe' => 'admin123',
                 'code_admin' => '000000',
+                'role' => Admin::ROLE_SUPER_ADMIN,
             ],
         );
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ListeDemandes from "../components/ListeDemandes";
 import CalendrierDisponibilite from "../components/CalendrierDisponibilite";
 import ListeDisponibilite from "../components/ListeDisponibilite";
@@ -138,16 +138,25 @@ function AdminDashboard() {
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={deconnecter}
-            className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-4 py-2 rounded-lg"
-          >
-            Déconnexion
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {admin?.role === "super_admin" && (
+              <Link
+                to="/super-admin/gestion"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg"
+              >
+                Super admin
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={deconnecter}
+              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-4 py-2 rounded-lg"
+            >
+              Déconnexion
+            </button>
+          </div>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[

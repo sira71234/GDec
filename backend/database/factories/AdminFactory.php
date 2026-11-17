@@ -30,6 +30,7 @@ class AdminFactory extends Factory
             'identifiant' => 'admin_'.$this->faker->unique()->numberBetween(1, 99999),
             'mot_de_passe' => 'password',
             'code_admin' => '123456',
+            'role' => Admin::ROLE_ADMIN,
         ];
     }
 }

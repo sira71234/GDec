@@ -18,7 +18,14 @@ class Admin extends Authenticatable
         'identifiant',
         'mot_de_passe',
         'code_admin',
+        'role',
     ];
+
+    // Rôles disponibles. Un super administrateur peut tout faire dans
+    // l'espace admin et gère en plus les comptes administrateurs.
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_SUPER_ADMIN = 'super_admin';
 
     protected $hidden = [
         'mot_de_passe',
@@ -37,5 +44,11 @@ class Admin extends Authenticatable
     public function getAuthPassword()
     {
         return $this->mot_de_passe;
+    }
+
+    /** Indique si le compte peut gérer les autres administrateurs. */
+    public function estSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
     }
 }

@@ -2,6 +2,8 @@ import Home from "./pages/Home";
 import Commandes from "./pages/Commandes";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SuperAdminGestion from "./pages/SuperAdminGestion";
 import Layout from "./composants/Layout";
 import { PageErreur, PageIntrouvable } from "./pages/PageErreur";
 
@@ -21,6 +23,16 @@ const router = createBrowserRouter([
   {
     path: "/admin/dashboard",
     element: <AdminDashboard />,
+    errorElement: <PageErreur />,
+  },
+  {
+    path: "/super-admin",
+    element: <SuperAdminLogin />,
+    errorElement: <PageErreur />,
+  },
+  {
+    path: "/super-admin/gestion",
+    element: <SuperAdminGestion />,
     errorElement: <PageErreur />,
   },
 ]);
