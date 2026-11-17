@@ -11,7 +11,7 @@ use App\Models\ContenuVitrine;
 class VitrineService
 {
     /**
-     * @return array{banniere: array<string, ?string>, galerie: array<int, array<string, mixed>>, sections: array<int, array<string, mixed>>, reglages: array{afficher_visuels_defaut: bool}}
+     * @return array{banniere: array<string, ?string>, galerie: array<int, array<string, mixed>>, sections: array<int, array<string, mixed>>, reglages: array{afficher_visuels_defaut: bool, visuels_defaut_masques: array<int, string>}}
      */
     public function representation(): array
     {
@@ -52,10 +52,15 @@ class VitrineService
             ->all();
 
         // Les visuels livrés avec le site restent affichés tant que
-        // l'administrateur ne les désactive pas explicitement.
+        // l'administrateur ne les désactive pas explicitement. Il peut aussi
+        // masquer seulement certains d'entre eux, individuellement.
         $reglageVisuels = $contenus
             ->where('section', ContenuVitrine::SECTION_REGLAGES)
             ->firstWhere('cle', 'afficher_visuels_defaut');
+
+        $reglageMasques = $contenus
+            ->where('section', ContenuVitrine::SECTION_REGLAGES)
+            ->firstWhere('cle', 'visuels_defaut_masques');
 
         return [
             'banniere' => $banniere,
@@ -63,7 +68,28 @@ class VitrineService
             'sections' => $sections,
             'reglages' => [
                 'afficher_visuels_defaut' => $reglageVisuels?->valeur !== '0',
+                'visuels_defaut_masques' => $this->listeMasques($reglageMasques?->valeur),
             ],
         ];
+    }
+
+    /**
+     * Décode la liste (JSON) des visuels d'origine masqués.
+     *
+     * @return array<int, string>
+     */
+    private function listeMasques(?string $valeur): array
+    {
+        if ($valeur === null || $valeur === '') {
+            return [];
+        }
+
+        $liste = json_decode($valeur, true);
+
+        if (! is_array($liste)) {
+            return [];
+        }
+
+        return array_values(array_filter($liste, 'is_string'));
     }
 }

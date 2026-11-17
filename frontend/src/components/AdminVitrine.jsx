@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import PhotoUploader from "./PhotoUploader";
 import { storageUrl } from "../services/api";
+import { VISUELS_DEFAUT } from "../services/visuelsDefaut";
 import {
   getAdminVitrine,
   updateBanniere,
@@ -27,6 +28,8 @@ function AdminVitrine() {
 
   const [section, setSection] = useState(null);
   const [afficherVisuelsDefaut, setAfficherVisuelsDefaut] = useState(true);
+  // Noms de fichiers des visuels d'origine masqués individuellement.
+  const [visuelsMasques, setVisuelsMasques] = useState([]);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -41,6 +44,7 @@ function AdminVitrine() {
       setAfficherVisuelsDefaut(
         donnees.reglages?.afficher_visuels_defaut ?? true,
       );
+      setVisuelsMasques(donnees.reglages?.visuels_defaut_masques ?? []);
     } catch {
       setErreur("Impossible de charger la vitrine.");
     } finally {
@@ -104,6 +108,14 @@ function AdminVitrine() {
     }
   };
 
+  const basculerVisuelDefaut = (fichier) => {
+    setVisuelsMasques((actuels) =>
+      actuels.includes(fichier)
+        ? actuels.filter((nom) => nom !== fichier)
+        : [...actuels, fichier],
+    );
+  };
+
   const enregistrerReglages = async (event) => {
     event.preventDefault();
     setErreur(null);
@@ -112,6 +124,7 @@ function AdminVitrine() {
     try {
       const reponse = await updateReglagesVitrine({
         afficher_visuels_defaut: afficherVisuelsDefaut,
+        visuels_defaut_masques: visuelsMasques,
       });
       setVitrine(reponse.vitrine);
       setMessage("Réglages de la galerie enregistrés.");
@@ -301,6 +314,53 @@ function AdminVitrine() {
               remplacer entièrement les visuels de départ.
             </span>
           </label>
+
+          <div
+            className={
+              afficherVisuelsDefaut ? "" : "opacity-50 pointer-events-none"
+            }
+          >
+            <p className="text-sm font-semibold text-gray-700 mb-2">
+              Visuels d&apos;origine affichés :{" "}
+              {VISUELS_DEFAUT.length - visuelsMasques.length} /{" "}
+              {VISUELS_DEFAUT.length}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {VISUELS_DEFAUT.map((visuel) => {
+                const affiche = !visuelsMasques.includes(visuel.fichier);
+
+                return (
+                  <label
+                    key={visuel.fichier}
+                    className="border border-gray-200 rounded-lg overflow-hidden bg-white cursor-pointer"
+                  >
+                    <img
+                      src={visuel.photo}
+                      alt={visuel.nom}
+                      className={`h-24 w-full object-cover ${
+                        affiche ? "" : "grayscale opacity-40"
+                      }`}
+                    />
+                    <span className="flex items-center gap-2 px-2 py-1 text-xs text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={affiche}
+                        disabled={!afficherVisuelsDefaut}
+                        onChange={() => basculerVisuelDefaut(visuel.fichier)}
+                      />
+                      <span className="truncate">{visuel.nom}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Décochez un visuel pour le retirer de la page d&apos;accueil.
+              L&apos;opération reste réversible : recochez-le pour le
+              réafficher.
+            </p>
+          </div>
+
           <button
             type="submit"
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded-lg"

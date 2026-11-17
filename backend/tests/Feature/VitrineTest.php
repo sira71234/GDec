@@ -34,7 +34,8 @@ class VitrineTest extends TestCase
             ->assertJsonPath('banniere.sous_titre', null)
             ->assertJsonPath('galerie', [])
             ->assertJsonPath('sections', [])
-            ->assertJsonPath('reglages.afficher_visuels_defaut', true);
+            ->assertJsonPath('reglages.afficher_visuels_defaut', true)
+            ->assertJsonPath('reglages.visuels_defaut_masques', []);
     }
 
     public function test_le_disque_public_ecrit_dans_public_storage()
@@ -136,6 +137,46 @@ class VitrineTest extends TestCase
         $this->getJson('/api/vitrine')
             ->assertOk()
             ->assertJsonPath('reglages.afficher_visuels_defaut', false);
+    }
+
+    public function test_ladmin_peut_masquer_un_visuel_par_defaut()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $this->putJson('/api/admin/vitrine/reglages', [
+            'afficher_visuels_defaut' => true,
+            'visuels_defaut_masques' => ['assiete.jpg', 'plats.jpeg.jpeg'],
+        ])->assertOk()
+            ->assertJsonPath('vitrine.reglages.visuels_defaut_masques', [
+                'assiete.jpg',
+                'plats.jpeg.jpeg',
+            ]);
+
+        $this->getJson('/api/vitrine')
+            ->assertOk()
+            ->assertJsonPath('reglages.visuels_defaut_masques', [
+                'assiete.jpg',
+                'plats.jpeg.jpeg',
+            ]);
+    }
+
+    public function test_les_visuels_masques_sont_conserves_si_le_champ_est_absent()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $this->putJson('/api/admin/vitrine/reglages', [
+            'afficher_visuels_defaut' => true,
+            'visuels_defaut_masques' => ['assiete.jpg'],
+        ])->assertOk();
+
+        // Un client qui n'envoie que le réglage global ne doit pas effacer
+        // les visuels masqués un par un.
+        $this->putJson('/api/admin/vitrine/reglages', [
+            'afficher_visuels_defaut' => false,
+        ])->assertOk()
+            ->assertJsonPath('vitrine.reglages.visuels_defaut_masques', [
+                'assiete.jpg',
+            ]);
     }
 
     public function test_ladmin_ajoute_une_section_libre()

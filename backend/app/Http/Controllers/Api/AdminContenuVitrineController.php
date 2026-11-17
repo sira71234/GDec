@@ -64,6 +64,8 @@ class AdminContenuVitrineController extends Controller
     {
         $donnees = $request->validate([
             'afficher_visuels_defaut' => ['required', 'boolean'],
+            'visuels_defaut_masques' => ['nullable', 'array'],
+            'visuels_defaut_masques.*' => ['string', 'max:255'],
         ]);
 
         ContenuVitrine::updateOrCreate(
@@ -73,6 +75,17 @@ class AdminContenuVitrineController extends Controller
                 'valeur' => $donnees['afficher_visuels_defaut'] ? '1' : '0',
             ],
         );
+
+        // Liste facultative : sans elle, le réglage existant est conservé.
+        if (array_key_exists('visuels_defaut_masques', $donnees)) {
+            ContenuVitrine::updateOrCreate(
+                ['section' => ContenuVitrine::SECTION_REGLAGES, 'cle' => 'visuels_defaut_masques'],
+                [
+                    'type' => ContenuVitrine::TYPE_TEXTE,
+                    'valeur' => json_encode(array_values(array_unique($donnees['visuels_defaut_masques']))),
+                ],
+            );
+        }
 
         return response()->json([
             'message' => 'Réglages de la vitrine mis à jour.',

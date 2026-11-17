@@ -3,8 +3,7 @@ import ArticleCard from "../composants/ArticleCards.jsx";
 import Reveal from "../composants/Reveal.jsx";
 import { getVitrine } from "../services/catalogueService";
 import { storageUrl } from "../services/api";
-
-const images = import.meta.glob("../assets/images/*.{jpg,jpeg,png,webp}", { eager: true });
+import { VISUELS_DEFAUT } from "../services/visuelsDefaut";
 
 // Valeurs utilisées tant que l'administrateur n'a rien personnalisé.
 const BANNIERE_PAR_DEFAUT = {
@@ -22,11 +21,12 @@ function Home() {
       .catch(() => setVitrine(null));
   }, []);
 
-  // Repli sur les visuels livrés avec le site si la galerie admin est vide.
-  const articlesParDefaut = Object.entries(images).map(([chemin, module]) => {
-    const nomFichier = chemin.split("/").pop().split(".")[0];
-    return { photo: module.default, nom: nomFichier.replace(/_/g, " ") };
-  });
+  // Visuels livrés avec le site, éventuellement masqués un par un depuis
+  // l'espace d'administration.
+  const visuelsMasques = vitrine?.reglages?.visuels_defaut_masques ?? [];
+  const articlesParDefaut = VISUELS_DEFAUT.filter(
+    (visuel) => !visuelsMasques.includes(visuel.fichier),
+  );
 
   const banniere = {
     titre: vitrine?.banniere?.titre || BANNIERE_PAR_DEFAUT.titre,
