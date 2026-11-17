@@ -22,6 +22,10 @@
     # fichiers subsistent dans public/storage sur l'hébergement).
     RewriteRule ^storage/(pieces_identite|devis)(/|$) - [F,L]
 
+    # Un fichier de stockage absent doit renvoyer 404, jamais la page React.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^storage/ - [R=404,L]
+
     # API Laravel.
     # - /api/... quand la racine réécrit directement vers public/index.php ;
     # - /public/api/... quand le site est consulté via /public/.

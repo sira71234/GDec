@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // --- Vitrine : textes et images de la page d'accueil ---
         Route::get('/vitrine', [AdminContenuVitrineController::class, 'index']);
+        Route::match(['put', 'patch', 'post'], '/vitrine/reglages', [AdminContenuVitrineController::class, 'updateReglages']);
         Route::match(['put', 'patch', 'post'], '/vitrine/banniere', [AdminContenuVitrineController::class, 'updateBanniere']);
         Route::post('/vitrine/contenus', [AdminContenuVitrineController::class, 'store']);
         Route::match(['put', 'patch', 'post'], '/vitrine/contenus/{contenu}', [AdminContenuVitrineController::class, 'update']);

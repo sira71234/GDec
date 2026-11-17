@@ -40,7 +40,14 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Sur un hébergement mutualisé sans SSH (InfinityFree), le lien
+            // symbolique public/storage -> storage/app/public ne peut pas être
+            // créé : les fichiers déposés dans storage/app/public ne sont donc
+            // jamais servis par /storage/... On écrit directement dans
+            // public/storage, déjà accessible en statique. En local,
+            // public/storage est un lien vers storage/app/public : le
+            // comportement reste identique.
+            'root' => public_path('storage'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

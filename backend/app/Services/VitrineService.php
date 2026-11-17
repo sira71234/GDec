@@ -11,7 +11,7 @@ use App\Models\ContenuVitrine;
 class VitrineService
 {
     /**
-     * @return array{banniere: array<string, ?string>, galerie: array<int, array<string, mixed>>, sections: array<int, array<string, mixed>>}
+     * @return array{banniere: array<string, ?string>, galerie: array<int, array<string, mixed>>, sections: array<int, array<string, mixed>>, reglages: array{afficher_visuels_defaut: bool}}
      */
     public function representation(): array
     {
@@ -51,10 +51,19 @@ class VitrineService
             ->values()
             ->all();
 
+        // Les visuels livrés avec le site restent affichés tant que
+        // l'administrateur ne les désactive pas explicitement.
+        $reglageVisuels = $contenus
+            ->where('section', ContenuVitrine::SECTION_REGLAGES)
+            ->firstWhere('cle', 'afficher_visuels_defaut');
+
         return [
             'banniere' => $banniere,
             'galerie' => $galerie,
             'sections' => $sections,
+            'reglages' => [
+                'afficher_visuels_defaut' => $reglageVisuels?->valeur !== '0',
+            ],
         ];
     }
 }

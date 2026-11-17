@@ -7,6 +7,7 @@ import {
   createContenuVitrine,
   updateContenuVitrine,
   deleteContenuVitrine,
+  updateReglagesVitrine,
 } from "../services/adminService";
 
 function AdminVitrine() {
@@ -22,6 +23,7 @@ function AdminVitrine() {
   const [imageFichier, setImageFichier] = useState(null);
 
   const [section, setSection] = useState(null);
+  const [afficherVisuelsDefaut, setAfficherVisuelsDefaut] = useState(true);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -33,6 +35,9 @@ function AdminVitrine() {
         titre: donnees.banniere?.titre ?? "",
         sous_titre: donnees.banniere?.sous_titre ?? "",
       });
+      setAfficherVisuelsDefaut(
+        donnees.reglages?.afficher_visuels_defaut ?? true,
+      );
     } catch {
       setErreur("Impossible de charger la vitrine.");
     } finally {
@@ -90,6 +95,22 @@ function AdminVitrine() {
       await charger();
     } catch {
       setErreur("Ajout de l'image impossible.");
+    }
+  };
+
+  const enregistrerReglages = async (event) => {
+    event.preventDefault();
+    setErreur(null);
+    setMessage(null);
+
+    try {
+      const reponse = await updateReglagesVitrine({
+        afficher_visuels_defaut: afficherVisuelsDefaut,
+      });
+      setVitrine(reponse.vitrine);
+      setMessage("Réglages de la galerie enregistrés.");
+    } catch {
+      setErreur("Enregistrement des réglages impossible.");
     }
   };
 
@@ -225,6 +246,31 @@ function AdminVitrine() {
             className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded-lg"
           >
             Ajouter à la galerie
+          </button>
+        </form>
+
+        <form
+          onSubmit={enregistrerReglages}
+          className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 space-y-3"
+        >
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={afficherVisuelsDefaut}
+              onChange={(e) => setAfficherVisuelsDefaut(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Afficher aussi les visuels d'origine de la page d'accueil.
+              Décochez cette option lorsque votre galerie personnalisée doit
+              remplacer entièrement les visuels de départ.
+            </span>
+          </label>
+          <button
+            type="submit"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2 rounded-lg"
+          >
+            Enregistrer le réglage
           </button>
         </form>
 

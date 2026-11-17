@@ -32,6 +32,11 @@
     RewriteRule ^(app|bootstrap|config|database|resources|routes|tests|vendor)(/|$) - [F,L]
     RewriteRule ^storage/(app|framework|logs)(/|$) - [F,L]
 
+    # Un fichier de stockage absent doit renvoyer 404, jamais la page React.
+    # Sinon une balise <img> reçoit du HTML et affiche un rectangle vide.
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} !-f
+    RewriteRule ^storage/ - [R=404,L]
+
     # API Laravel : /api/... doit être traité par public/index.php.
     # Laravel lit REQUEST_URI et retrouve bien la route /api/...
     RewriteRule ^api(/.*)?$ public/index.php [L]

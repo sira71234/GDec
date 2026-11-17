@@ -223,7 +223,13 @@ export async function getAdminVitrine() {
     banniere: asObject(data?.banniere),
     galerie: asArray(data?.galerie),
     sections: asArray(data?.sections),
+    reglages: asObject(data?.reglages),
   };
+}
+
+export async function updateReglagesVitrine(donnees) {
+  const { data } = await api.put("/admin/vitrine/reglages", donnees);
+  return data;
 }
 
 export async function updateBanniere(formData) {

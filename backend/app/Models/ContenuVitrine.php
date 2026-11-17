@@ -31,6 +31,8 @@ class ContenuVitrine extends Model
 
     public const SECTION_LIBRE = 'section';
 
+    public const SECTION_REGLAGES = 'reglages';
+
     public const TYPE_TEXTE = 'texte';
 
     public const TYPE_IMAGE = 'image';

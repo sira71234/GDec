@@ -54,6 +54,27 @@ class AdminContenuVitrineController extends Controller
         ]);
     }
 
+    /** PUT /api/admin/vitrine/reglages */
+    public function updateReglages(Request $request): JsonResponse
+    {
+        $donnees = $request->validate([
+            'afficher_visuels_defaut' => ['required', 'boolean'],
+        ]);
+
+        ContenuVitrine::updateOrCreate(
+            ['section' => ContenuVitrine::SECTION_REGLAGES, 'cle' => 'afficher_visuels_defaut'],
+            [
+                'type' => ContenuVitrine::TYPE_TEXTE,
+                'valeur' => $donnees['afficher_visuels_defaut'] ? '1' : '0',
+            ],
+        );
+
+        return response()->json([
+            'message' => 'Réglages de la vitrine mis à jour.',
+            'vitrine' => $this->vitrine->representation(),
+        ]);
+    }
+
     /** POST /api/admin/vitrine/contenus */
     public function store(ContenuVitrineRequest $request): JsonResponse
     {

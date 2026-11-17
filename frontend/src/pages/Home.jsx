@@ -34,12 +34,20 @@ function Home() {
     image: vitrine?.banniere?.image ? storageUrl(vitrine.banniere.image) : null,
   };
 
-  const galerie = vitrine?.galerie?.length
-    ? vitrine.galerie.map((item) => ({
-        photo: storageUrl(item.image),
-        nom: item.titre || "",
-      }))
-    : articlesParDefaut;
+  // Les images ajoutées par l'administrateur s'ajoutent aux visuels d'origine
+  // tant que le réglage "afficher les visuels par défaut" reste actif.
+  const galerieAdmin = (vitrine?.galerie ?? []).map((item) => ({
+    photo: storageUrl(item.image),
+    nom: item.titre || "",
+  }));
+
+  const afficherVisuelsDefaut =
+    vitrine?.reglages?.afficher_visuels_defaut ?? true;
+
+  const galerie = [
+    ...galerieAdmin,
+    ...(afficherVisuelsDefaut ? articlesParDefaut : []),
+  ];
 
   const sections = vitrine?.sections ?? [];
 

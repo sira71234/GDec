@@ -33,7 +33,15 @@ class VitrineTest extends TestCase
             ->assertJsonPath('banniere.titre', null)
             ->assertJsonPath('banniere.sous_titre', null)
             ->assertJsonPath('galerie', [])
-            ->assertJsonPath('sections', []);
+            ->assertJsonPath('sections', [])
+            ->assertJsonPath('reglages.afficher_visuels_defaut', true);
+    }
+
+    public function test_le_disque_public_ecrit_dans_public_storage()
+    {
+        // Sur un hébergement sans SSH, public/storage doit être la racine
+        // réelle du disque : sinon les uploads ne sont jamais servis.
+        $this->assertSame(public_path('storage'), config('filesystems.disks.public.root'));
     }
 
     public function test_la_vitrine_publique_reflete_le_contenu_enregistre()
@@ -89,6 +97,20 @@ class VitrineTest extends TestCase
 
         $contenu = ContenuVitrine::first();
         Storage::disk('public')->assertExists($contenu->valeur);
+    }
+
+    public function test_ladmin_peut_desactiver_les_visuels_par_defaut()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $this->putJson('/api/admin/vitrine/reglages', [
+            'afficher_visuels_defaut' => false,
+        ])->assertOk()
+            ->assertJsonPath('vitrine.reglages.afficher_visuels_defaut', false);
+
+        $this->getJson('/api/vitrine')
+            ->assertOk()
+            ->assertJsonPath('reglages.afficher_visuels_defaut', false);
     }
 
     public function test_ladmin_ajoute_une_section_libre()
