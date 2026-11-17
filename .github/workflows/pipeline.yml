@@ -48,7 +48,12 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      # Seules les dépendances embarquées dans le bundle livré bloquent le
+      # déploiement. Les outils de build (vite, tailwind) ne partent jamais en
+      # production et peuvent recevoir des avis sans correctif disponible.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm audit --audit-level=high
+        continue-on-error: true
       - run: npm run build
         env:
           VITE_API_URL: /api
