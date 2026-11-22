@@ -113,6 +113,13 @@
     @endif
 
     @if(in_array($commande->type_prestation, ['decoration', 'les_deux']))
+        @if($commande->montant_decoration !== null)
+            <p>
+                Forfait décoration convenu avec le client :
+                {{ number_format($montantDecoration, 0, ',', ' ') }} FCFA
+                (les prestations listées ci-dessus sont indicatives).
+            </p>
+        @endif
         <div class="total">
             Sous-total décoration : {{ number_format($montantDecoration, 0, ',', ' ') }} FCFA
         </div>

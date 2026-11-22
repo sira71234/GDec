@@ -52,11 +52,29 @@ class CautionCalculatorService
     }
 
     /**
+     * Détail des montants d'une commande. Source unique utilisée par la
+     * confirmation, le récapitulatif PDF et le devis pour éviter tout écart.
+     *
+     * @return array{location: float, decoration: float, total: float}
+     */
+    public function detailTotaux(Commande $commande): array
+    {
+        $location = $this->totalLocation($commande);
+        $decoration = $this->totalDecorationEffectif($commande);
+
+        return [
+            'location' => $location,
+            'decoration' => $decoration,
+            'total' => round($location + $decoration, 2),
+        ];
+    }
+
+    /**
      * Montant total de la commande (location + décoration effective).
      */
     public function totalGeneral(Commande $commande): float
     {
-        return round($this->totalLocation($commande) + $this->totalDecorationEffectif($commande), 2);
+        return $this->detailTotaux($commande)['total'];
     }
 
     /**

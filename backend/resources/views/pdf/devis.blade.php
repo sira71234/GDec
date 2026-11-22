@@ -11,6 +11,8 @@
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
         th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
         th { background-color: #ecfdf5; }
+        .synthese { margin-top: 18px; padding: 10px 12px; background-color: #f3f4f6; }
+        .synthese p { margin: 4px 0; text-align: right; }
         .total { font-weight: bold; font-size: 16px; margin-top: 15px; text-align: right; color: #065f46; }
         .mention { margin-top: 25px; font-size: 10px; color: #777; }
     </style>
@@ -107,6 +109,22 @@
             </p>
         @endif
     @endif
+
+    <div class="synthese">
+        @if(in_array($commande->type_prestation, ['location', 'les_deux']))
+            <p>Sous-total location : {{ number_format($montantLocation, 0, ',', ' ') }} FCFA</p>
+        @endif
+        @if(in_array($commande->type_prestation, ['decoration', 'les_deux']))
+            <p>
+                @if($commande->montant_decoration !== null)
+                    Sous-total décoration (forfait convenu) :
+                @else
+                    Sous-total décoration :
+                @endif
+                {{ number_format($montantDecoration, 0, ',', ' ') }} FCFA
+            </p>
+        @endif
+    </div>
 
     <div class="total">
         Montant total : {{ number_format($montantTotal, 0, ',', ' ') }} FCFA

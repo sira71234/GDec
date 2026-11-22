@@ -62,6 +62,46 @@ class DevisTest extends TestCase
             ->assertStatus(401);
     }
 
+    public function test_le_total_du_devis_est_la_somme_du_detail_affiche()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $commande = Commande::factory()->lesDeux()->create();
+        $materiel = Materiel::factory()->create(['prix_unitaire' => 2000]);
+        $prestation = PrestationDecoration::factory()->create(['prix' => 4000]);
+        $commande->materiels()->attach($materiel->id, ['quantite' => 3]);
+        $commande->prestationsDecoration()->attach($prestation->id, ['quantite' => 1]);
+
+        $response = $this->postJson("/api/admin/commandes/{$commande->id}/devis")
+            ->assertCreated();
+
+        // Location 6000 + décoration 4000 = 10000, sans multiplier par les jours.
+        $this->assertEquals(10000, (float) $response->json('devis.montant_total'));
+        $this->assertEquals(10000, (float) Devis::first()->montant_total);
+    }
+
+    public function test_regenerer_un_devis_remplace_le_montant_perime()
+    {
+        Sanctum::actingAs(Admin::factory()->create());
+
+        $commande = Commande::factory()->location()->create();
+        $materiel = Materiel::factory()->create(['prix_unitaire' => 160000]);
+        $commande->materiels()->attach($materiel->id, ['quantite' => 1]);
+
+        // Ancien devis généré avec l'ancien calcul (2 jours de location).
+        $ancien = $commande->devis()->create([
+            'fichier_pdf' => 'devis/ancien.pdf',
+            'montant_total' => 320000,
+            'date_generation' => now()->subDay(),
+        ]);
+
+        $this->postJson("/api/admin/commandes/{$commande->id}/devis")->assertCreated();
+
+        $nouveau = $commande->devis()->latest('id')->first();
+        $this->assertNotSame($ancien->id, $nouveau->id);
+        $this->assertEquals(160000, (float) $nouveau->montant_total);
+    }
+
     public function test_le_devis_utilise_le_montant_de_decoration_fixe_par_ladmin()
     {
         Sanctum::actingAs(Admin::factory()->create());

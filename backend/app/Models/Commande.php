@@ -81,10 +81,10 @@ class Commande extends Model
         )->withTimestamps();
     }
 
-    // Une commande validée peut donner lieu à un ou plusieurs devis.
+    // Une commande peut avoir plusieurs devis : le plus récent est le bon.
     public function devis()
     {
-        return $this->hasMany(Devis::class);
+        return $this->hasMany(Devis::class)->latest();
     }
 
     // Journal des actions effectuées sur la commande (création, modification…).

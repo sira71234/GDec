@@ -21,11 +21,12 @@ class PdfGeneratorService
         $commande->loadMissing(['client', 'materiels', 'prestationsDecoration', 'elementsDecor']);
 
         // Chargement de la vue Blade dédiée au rendu graphique du PDF
+        $totaux = $this->calculateur->detailTotaux($commande);
         $pdf = Pdf::loadView('pdf.recapitulatif', [
             'commande' => $commande,
-            'montantLocation' => $this->calculateur->totalLocation($commande),
-            'montantDecoration' => $this->calculateur->totalDecorationEffectif($commande),
-            'montantTotal' => $this->calculateur->totalGeneral($commande),
+            'montantLocation' => $totaux['location'],
+            'montantDecoration' => $totaux['decoration'],
+            'montantTotal' => $totaux['total'],
         ]);
 
         // Génération d'un nom de fichier unique et sécurisé
@@ -46,13 +47,18 @@ class PdfGeneratorService
      * Génère le PDF de devis d'une commande validée et le sauvegarde sur le disque.
      * Retourne le chemin relatif du fichier généré.
      */
-    public function genererDevis(Commande $commande, float $montantTotal): string
+    /**
+     * @param  array{location: float, decoration: float, total: float}  $totaux
+     */
+    public function genererDevis(Commande $commande, array $totaux): string
     {
         $commande->loadMissing(['client', 'materiels', 'prestationsDecoration', 'elementsDecor']);
 
         $pdf = Pdf::loadView('pdf.devis', [
             'commande' => $commande,
-            'montantTotal' => $montantTotal,
+            'montantLocation' => $totaux['location'],
+            'montantDecoration' => $totaux['decoration'],
+            'montantTotal' => $totaux['total'],
         ]);
 
         $nomFichier = 'devis/devis_commande_'.$commande->id.'_'.Str::random(8).'.pdf';
