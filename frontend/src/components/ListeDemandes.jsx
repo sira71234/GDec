@@ -312,8 +312,7 @@ function ListeDemandes({
                           {m.nom} × {m.pivot?.quantite} —{" "}
                           {fcfa(
                             Number(m.prix_unitaire) * Number(m.pivot?.quantite),
-                          )}{" "}
-                          / jour
+                          )}
                         </li>
                       ))}
                     </ul>

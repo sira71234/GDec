@@ -26,21 +26,23 @@ export function PanierProvider({ children }) {
   const [location, setLocation] = useState(LOCATION_VIDE);
   const [decoration, setDecoration] = useState(DECORATION_VIDE);
 
-  const bornerQuantite = (quantite, maximum) => {
+  // Aucun plafond de quantité : seul le minimum de 1 est garanti.
+  const bornerQuantite = (quantite) => {
     const minimum = 1;
     const nombre = Number(quantite);
     if (Number.isNaN(nombre)) return minimum;
-    const plafond =
-      maximum === undefined || maximum === null ? Infinity : Number(maximum);
-    return Math.max(minimum, Math.min(nombre, plafond));
+    return Math.max(minimum, nombre);
   };
+
+  const arrondir = (montant) =>
+    Math.round((Number(montant) + Number.EPSILON) * 100) / 100;
 
   const addMateriel = (article, quantite = 1) => {
     const stock = article.quantite_stock;
     if (stock !== undefined && stock !== null && Number(stock) <= 0) {
       return;
     }
-    const quantiteBornee = bornerQuantite(quantite, stock);
+    const quantiteBornee = bornerQuantite(quantite);
 
     setMateriels((precedent) => {
       const existant = precedent.find((item) => item.id === article.id);
@@ -59,7 +61,7 @@ export function PanierProvider({ children }) {
     setMateriels((precedent) =>
       precedent.map((item) =>
         item.id === id
-          ? { ...item, quantite: bornerQuantite(quantite, item.quantite_stock) }
+          ? { ...item, quantite: bornerQuantite(quantite) }
           : item,
       ),
     );
@@ -122,20 +124,25 @@ export function PanierProvider({ children }) {
     setDecoration(DECORATION_VIDE);
   };
 
+  // Même règle que l'API : prix × quantité, sans facturation des jours.
   const totalMateriel = useMemo(
     () =>
-      materiels.reduce(
-        (acc, item) => acc + Number(item.prix_unitaire) * item.quantite,
-        0,
+      arrondir(
+        materiels.reduce(
+          (acc, item) => acc + Number(item.prix_unitaire) * item.quantite,
+          0,
+        ),
       ),
     [materiels],
   );
 
   const totalPrestation = useMemo(
     () =>
-      prestations.reduce(
-        (acc, item) => acc + Number(item.prix) * item.quantite,
-        0,
+      arrondir(
+        prestations.reduce(
+          (acc, item) => acc + Number(item.prix) * item.quantite,
+          0,
+        ),
       ),
     [prestations],
   );
@@ -183,8 +190,8 @@ export function PanierProvider({ children }) {
     clear,
     totalMateriel,
     totalPrestation,
-    totalGeneral: totalMateriel + totalPrestation,
-    cautionEstimee: totalMateriel * 0.3,
+    totalGeneral: arrondir(totalMateriel + totalPrestation),
+    cautionEstimee: arrondir(totalMateriel * 0.3),
     nombreArticles,
     typePrestation,
   };

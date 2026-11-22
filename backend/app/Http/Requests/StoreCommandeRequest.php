@@ -65,12 +65,13 @@ class StoreCommandeRequest extends FormRequest
             // Matériel loué (au moins une ligne si location).
             'materiels' => [Rule::requiredIf($besoinLocation), 'array'],
             'materiels.*.id' => ['required', 'integer', 'distinct', 'exists:materiels,id'],
-            'materiels.*.quantite' => ['required', 'integer', 'min:1', 'max:100'],
+            // Aucun plafond : le client loue la quantité qu'il souhaite.
+            'materiels.*.quantite' => ['required', 'integer', 'min:1'],
 
             // Prestations de décoration (facultatif, quantité facultative).
             'prestations_decoration' => ['nullable', 'array'],
             'prestations_decoration.*.id' => ['required', 'integer', 'exists:prestations_decoration,id'],
-            'prestations_decoration.*.quantite' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'prestations_decoration.*.quantite' => ['nullable', 'integer', 'min:1'],
 
             // Éléments à décorer sélectionnés.
             'elements_decor' => ['nullable', 'array'],
@@ -96,7 +97,11 @@ class StoreCommandeRequest extends FormRequest
                     return;
                 }
 
-                $demandes = [];
+                // Aucune limite de quantité : seul le stock épuisé bloque la
+                // location. Le stock n'est pas un plafond, une simple
+                // disponibilité (un article peut être loué en 10 exemplaires
+                // même s'il n'en reste que 2 en rayon).
+                $idsDemandes = [];
                 foreach ($materiels as $ligne) {
                     if (! is_array($ligne)) {
                         continue;
@@ -104,28 +109,28 @@ class StoreCommandeRequest extends FormRequest
                     $id = $ligne['id'] ?? null;
                     $quantite = isset($ligne['quantite']) ? (int) $ligne['quantite'] : 0;
                     if ($id && $quantite > 0) {
-                        $demandes[$id] = ($demandes[$id] ?? 0) + $quantite;
+                        $idsDemandes[$id] = $id;
                     }
                 }
 
-                if (empty($demandes)) {
+                if (empty($idsDemandes)) {
                     return;
                 }
 
-                $stocks = Materiel::whereIn('id', array_keys($demandes))
-                    ->pluck('quantite_stock', 'id');
+                $articles = Materiel::whereIn('id', $idsDemandes)
+                    ->get(['id', 'nom', 'quantite_stock'])
+                    ->keyBy('id');
 
-                foreach ($demandes as $id => $total) {
-                    $stock = $stocks->get($id);
-                    if ($stock === null) {
+                foreach ($idsDemandes as $id) {
+                    $article = $articles->get($id);
+                    if ($article === null) {
                         continue;
                     }
-                    if ($total > (int) $stock) {
+                    if ((int) ($article->quantite_stock ?? 0) <= 0) {
                         $validator->errors()->add(
                             'materiels',
-                            "La quantité demandée pour un des articles dépasse le stock disponible ({$stock}).",
+                            "Le matériel « {$article->nom} » n'est plus disponible.",
                         );
-                        break;
                     }
                 }
             },

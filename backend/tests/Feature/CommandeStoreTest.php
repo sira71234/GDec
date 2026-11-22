@@ -62,8 +62,11 @@ class CommandeStoreTest extends TestCase
         ]);
 
         $commande = Commande::first();
-        // totalLocation = 1000 × 2 × 3 jours = 6000 ; caution = 30 % = 1800.
-        $this->assertEquals(1800, (float) $commande->montant_caution);
+        // Le tarif est forfaitaire : 1000 × 2 = 2000, quelle que soit la durée.
+        // La caution représente 30 % du total de la location.
+        $this->assertEquals(2000, (float) $response->json('commande.montant_total'));
+        $this->assertEquals(2000, (float) $response->json('commande.montant_location'));
+        $this->assertEquals(600, (float) $commande->montant_caution);
         $this->assertDatabaseHas('commande_materiel', [
             'commande_id' => $commande->id,
             'materiel_id' => $materiel->id,
@@ -190,11 +193,54 @@ class CommandeStoreTest extends TestCase
         $this->assertDatabaseCount('commandes', 2);
     }
 
-    public function test_une_quantite_superieure_au_stock_est_rejetee()
+    public function test_une_quantite_superieure_au_stock_est_acceptee()
     {
-        $materiel = Materiel::factory()->create(['quantite_stock' => 2]);
+        $materiel = Materiel::factory()->create(['prix_unitaire' => 1000, 'quantite_stock' => 2]);
 
-        $payload = [
+        $response = $this->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/commandes', $this->payloadLocation($materiel, 250));
+
+        $response->assertCreated();
+        $this->assertEquals(250000, (float) $response->json('commande.montant_location'));
+
+        $this->assertDatabaseHas('commande_materiel', [
+            'materiel_id' => $materiel->id,
+            'quantite' => 250,
+        ]);
+    }
+
+    public function test_un_materiel_en_rupture_de_stock_est_refuse()
+    {
+        $materiel = Materiel::factory()->create(['quantite_stock' => 0]);
+
+        $this->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/commandes', $this->payloadLocation($materiel, 1))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['materiels']);
+    }
+
+    public function test_le_total_ignore_la_duree_de_location()
+    {
+        $materiel = Materiel::factory()->create(['prix_unitaire' => 1000, 'quantite_stock' => 10]);
+
+        $payload = $this->payloadLocation($materiel, 2);
+        $payload['date_debut_location'] = now()->addDay()->toDateString();
+        $payload['date_fin_location'] = now()->addDays(30)->toDateString();
+
+        $response = $this->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/commandes', $payload)
+            ->assertCreated();
+
+        $this->assertEquals(2000, (float) $response->json('commande.montant_total'));
+        $this->assertEquals(600, (float) $response->json('commande.montant_caution'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payloadLocation(Materiel $materiel, int $quantite): array
+    {
+        return [
             'type_prestation' => 'location',
             'client' => [
                 'nom' => 'Stock Test',
@@ -205,13 +251,8 @@ class CommandeStoreTest extends TestCase
             'date_fin_location' => now()->addDays(2)->toDateString(),
             'piece_identite_type' => 'CNI',
             'piece_identite_photo' => UploadedFile::fake()->image('cni.jpg'),
-            'materiels' => [['id' => $materiel->id, 'quantite' => 3]],
+            'materiels' => [['id' => $materiel->id, 'quantite' => $quantite]],
         ];
-
-        $this->withHeaders(['Accept' => 'application/json'])
-            ->post('/api/commandes', $payload)
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['materiels']);
     }
 
     public function test_un_numero_deja_utilise_avec_un_autre_nom_est_rejete()

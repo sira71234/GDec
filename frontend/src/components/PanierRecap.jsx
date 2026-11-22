@@ -1,6 +1,6 @@
 import { usePanier } from "../context/usePanier";
 
-function Ligne({ nom, quantite, prix, max, onQuantiteChange, onRemove }) {
+function Ligne({ nom, quantite, prix, onQuantiteChange, onRemove }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 border-b border-gray-100">
       <span className="grow text-gray-800">{nom}</span>
@@ -9,14 +9,10 @@ function Ligne({ nom, quantite, prix, max, onQuantiteChange, onRemove }) {
           <input
             type="number"
             min="1"
-            max={max}
             value={quantite}
             onChange={(e) => onQuantiteChange(Number(e.target.value))}
             className="w-16 border border-gray-300 rounded-md px-2 py-1 text-center"
           />
-          {max !== undefined && (
-            <span className="text-[11px] text-gray-400">max {max}</span>
-          )}
         </div>
       )}
       <span className="w-28 text-right font-semibold text-gray-700">
@@ -87,7 +83,6 @@ function PanierRecap() {
                   key={item.id}
                   nom={item.nom}
                   quantite={item.quantite}
-                  max={item.quantite_stock}
                   prix={Number(item.prix_unitaire) * item.quantite}
                   onQuantiteChange={(q) => updateQuantiteMateriel(item.id, q)}
                   onRemove={() => removeMateriel(item.id)}

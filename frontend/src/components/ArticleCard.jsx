@@ -7,7 +7,7 @@ import placeholder from "../assets/hero.png";
  * - `article`   : { id, nom, description, photo, quantite_stock, ... }
  * - `prix`      : prix affiché (prix_unitaire pour le matériel, prix pour une prestation)
  * - `quantite`  : quantité actuellement dans le panier (0 = absent)
- * - `max`       : quantité maximale autorisée (stock disponible), facultatif
+ * - `max`       : limite facultative ; sans valeur, la quantité est illimitée
  * - `onAdd`     : ajout au panier avec la quantité choisie
  * - `onModifier`: modification de la quantité déjà au panier
  * - `onRetirer` : retrait du panier
@@ -29,7 +29,7 @@ function ArticleCard({
   const stock = article.quantite_stock;
   const stockDisponible = stock !== undefined && stock !== null ? Number(stock) : null;
   const rupture = stockDisponible !== null && stockDisponible <= 0;
-  const maximum = max ?? stockDisponible ?? Infinity;
+  const maximum = max === undefined || max === null ? Infinity : Number(max);
   const valeurAffichee = enPanier ? Number(quantite) : quantiteAjout;
   const champDesactive = enPanier && !edition;
 
@@ -39,7 +39,9 @@ function ArticleCard({
     const minimum = 1;
     const nombre = Number(valeur);
     if (Number.isNaN(nombre)) return minimum;
-    return Math.max(minimum, Math.min(nombre, maximum));
+    return Number.isFinite(maximum)
+      ? Math.max(minimum, Math.min(nombre, maximum))
+      : Math.max(minimum, nombre);
   };
 
   const changerQuantite = (valeur) => {
@@ -113,7 +115,7 @@ function ArticleCard({
           >
             {rupture
               ? "Rupture de stock"
-              : `Quantité disponible : ${stockDisponible}`}
+              : `En stock : ${stockDisponible} — quantité libre`}
           </p>
         )}
         <p className="text-green-700 font-bold mt-auto pt-2">

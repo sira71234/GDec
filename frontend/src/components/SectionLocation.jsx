@@ -170,7 +170,6 @@ function SectionLocation() {
             article={materiel}
             prix={materiel.prix_unitaire}
             quantite={quantiteDansPanier(materiel.id)}
-            max={materiel.quantite_stock}
             onAdd={(quantite) => addMateriel(materiel, quantite)}
             onModifier={(quantite) => updateQuantiteMateriel(materiel.id, quantite)}
             onRetirer={() => removeMateriel(materiel.id)}

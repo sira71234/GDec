@@ -12,29 +12,17 @@ class CautionCalculatorService
     private const TAUX_CAUTION = 0.30;
 
     /**
-     * Nombre de jours de location (borné à 1 minimum).
-     */
-    public function nombreJours(Commande $commande): int
-    {
-        if (! $commande->date_debut_location || ! $commande->date_fin_location) {
-            return 1;
-        }
-
-        return max(1, (int) $commande->date_debut_location->diffInDays($commande->date_fin_location) + 1);
-    }
-
-    /**
-     * Montant total de la location : somme(prix_unitaire × quantité) × nombre de jours.
+     * Montant total de la location : somme(prix_unitaire × quantité).
+     * La durée n'entre pas dans le tarif : le panier, la commande et les PDF
+     * affichent donc exactement le même montant.
      */
     public function totalLocation(Commande $commande): float
     {
         $commande->loadMissing('materiels');
 
-        $totalParJour = $commande->materiels->sum(
+        return round((float) $commande->materiels->sum(
             fn ($materiel): float => (float) $materiel->prix_unitaire * (int) $materiel->pivot->quantite,
-        );
-
-        return round((float) $totalParJour * $this->nombreJours($commande), 2);
+        ), 2);
     }
 
     /**
